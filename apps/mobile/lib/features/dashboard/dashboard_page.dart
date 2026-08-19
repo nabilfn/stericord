@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:stericord_mobile/core/theme/app_theme.dart';
 import 'package:stericord_mobile/features/auth/auth_controller.dart';
+import 'package:stericord_mobile/features/cycles/cycles_list_page.dart';
 import 'package:stericord_mobile/features/equipment/equipment_list_page.dart';
 import 'package:stericord_mobile/features/auth/profile_page.dart';
 
@@ -17,7 +18,12 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    final pages = [const _DashboardHome(), const EquipmentListPage(), const ProfilePage()];
+    final pages = [
+      const _DashboardHome(),
+      const CyclesListPage(),
+      const EquipmentListPage(),
+      const ProfilePage(),
+    ];
 
     return Scaffold(
       body: pages[_index],
@@ -26,6 +32,7 @@ class _DashboardPageState extends State<DashboardPage> {
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
           NavigationDestination(icon: Icon(Icons.dashboard_outlined), label: 'Dashboard'),
+          NavigationDestination(icon: Icon(Icons.layers_outlined), label: 'Cycles'),
           NavigationDestination(icon: Icon(Icons.build_outlined), label: 'Equipment'),
           NavigationDestination(icon: Icon(Icons.person_outline), label: 'Profile'),
         ],
@@ -54,7 +61,7 @@ class _DashboardHome extends StatelessWidget {
             child: const Padding(
               padding: EdgeInsets.all(16),
               child: Text(
-                'Sterilization cycles, pack tracking, and OT verification arrive in Phase 2 and Phase 3.',
+                'OT point-of-use scanning and verification arrive in Phase 3.',
               ),
             ),
           ),

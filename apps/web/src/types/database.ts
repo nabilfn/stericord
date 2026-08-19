@@ -83,6 +83,113 @@ export interface Equipment {
   updated_at: string;
 }
 
+export type CycleStatus =
+  | "CREATED"
+  | "RUNNING"
+  | "COMPLETED"
+  | "PENDING_VERIFICATION"
+  | "PASSED"
+  | "FAILED"
+  | "QUARANTINED";
+
+export type PackStatus =
+  | "PACKED"
+  | "STERILIZING"
+  | "PENDING_VERIFICATION"
+  | "RELEASED"
+  | "QUARANTINED"
+  | "RECALLED"
+  | "USED"
+  | "EXPIRED";
+
+export type EvidenceType =
+  | "AUTOCLAVE_RECEIPT"
+  | "BOWIE_DICK"
+  | "BI_TRAY"
+  | "CHEMICAL_INDICATOR"
+  | "OT_INDICATOR"
+  | "WASHER_TEST"
+  | "GENERAL";
+
+export type VerificationResult = "PASS" | "FAIL" | "UNDETERMINED";
+
+export interface InstrumentSet {
+  id: string;
+  organization_id: string;
+  name: string;
+  code: string;
+  description: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SterilizationCycle {
+  id: string;
+  organization_id: string;
+  equipment_id: string;
+  cycle_number: string;
+  cycle_type: string;
+  started_at: string | null;
+  completed_at: string | null;
+  temperature: number | null;
+  pressure: number | null;
+  hold_time_seconds: number | null;
+  operator_user_id: string | null;
+  cycle_status: CycleStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InstrumentPack {
+  id: string;
+  organization_id: string;
+  instrument_set_id: string;
+  sterilization_cycle_id: string;
+  pack_code: string;
+  qr_code: string;
+  packed_at: string;
+  sterilized_at: string | null;
+  expiry_date: string | null;
+  status: PackStatus;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EvidenceFile {
+  id: string;
+  organization_id: string;
+  entity_type: string;
+  entity_id: string;
+  storage_provider: string;
+  bucket: string;
+  object_path: string;
+  file_type: string | null;
+  mime_type: string | null;
+  file_size: number | null;
+  sha256_hash: string | null;
+  evidence_type: EvidenceType;
+  captured_by: string | null;
+  captured_at: string;
+  created_at: string;
+}
+
+export interface Verification {
+  id: string;
+  organization_id: string;
+  entity_type: string;
+  entity_id: string;
+  verification_type: string;
+  ai_suggested_result: VerificationResult | null;
+  ai_confidence: number | null;
+  human_result: VerificationResult;
+  verified_by: string;
+  verified_at: string;
+  notes: string | null;
+  created_at: string;
+}
+
 export interface EquipmentStatusEvent {
   id: string;
   organization_id: string;

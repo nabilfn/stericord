@@ -1,9 +1,10 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Wrench, Users, Settings } from "lucide-react";
+import { LayoutDashboard, Wrench, Layers, Users, Settings } from "lucide-react";
 import { cn } from "@/utils/cn";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/cycles", label: "Cycles", icon: Layers },
   { to: "/equipment", label: "Equipment", icon: Wrench },
   { to: "/users", label: "Users", icon: Users },
   { to: "/settings", label: "Settings", icon: Settings },

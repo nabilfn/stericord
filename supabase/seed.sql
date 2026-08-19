@@ -72,4 +72,11 @@ insert into public.equipment (organization_id, department_id, equipment_code, eq
   ('00000000-0000-0000-0000-000000000a01', '00000000-0000-0000-0000-0000000a0d01', 'WASHER-A1', 'WASHER_DISINFECTOR', 'Belimed', 'WD290', 'SN-A1-002', 'CSSD Room 1', '00000000-0000-0000-0000-0000000a1001'),
   ('00000000-0000-0000-0000-000000000b01', '00000000-0000-0000-0000-0000000b0d01', 'AUTOCLAVE-B1', 'STEAM_AUTOCLAVE', 'Steris', 'AMSCO600', 'SN-B1-001', 'CSSD Room 1', '00000000-0000-0000-0000-0000000b1001');
 
+-- Sample instrument sets -------------------------------------------------------------
+
+insert into public.instrument_sets (id, organization_id, name, code, description) values
+  ('00000000-0000-0000-0000-0000000a2001', '00000000-0000-0000-0000-000000000a01', 'Major Ortho Tray', 'ORTHO-MAJOR', 'Major orthopedic instrument tray'),
+  ('00000000-0000-0000-0000-0000000a2002', '00000000-0000-0000-0000-000000000a01', 'Minor Surgery Set', 'MINOR-SURG', 'General minor surgery instrument set'),
+  ('00000000-0000-0000-0000-0000000b2001', '00000000-0000-0000-0000-000000000b01', 'Laparoscopy Set', 'LAP-SET', 'Laparoscopic instrument set');
+
 commit;

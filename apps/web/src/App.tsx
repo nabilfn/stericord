@@ -7,6 +7,9 @@ import { LoginPage } from "@/features/auth/LoginPage";
 import { DashboardPage } from "@/features/dashboard/DashboardPage";
 import { EquipmentListPage } from "@/features/equipment/EquipmentListPage";
 import { EquipmentDetailPage } from "@/features/equipment/EquipmentDetailPage";
+import { CyclesListPage } from "@/features/cycles/CyclesListPage";
+import { CycleDetailPage } from "@/features/cycles/CycleDetailPage";
+import { PackDetailPage } from "@/features/packs/PackDetailPage";
 import { UsersPage } from "@/features/users/UsersPage";
 import { SettingsPage } from "@/features/settings/SettingsPage";
 
@@ -36,6 +39,9 @@ export default function App() {
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/equipment" element={<EquipmentListPage />} />
               <Route path="/equipment/:id" element={<EquipmentDetailPage />} />
+              <Route path="/cycles" element={<CyclesListPage />} />
+              <Route path="/cycles/:id" element={<CycleDetailPage />} />
+              <Route path="/packs/:id" element={<PackDetailPage />} />
               <Route path="/users" element={<UsersPage />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Route>
