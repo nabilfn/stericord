@@ -4,13 +4,13 @@ Hospital sterilization traceability and assurance platform. See
 [SteriCord_Updated_Master_Development_Prompt.md](./SteriCord_Updated_Master_Development_Prompt.md)
 for the full product/phase specification driving this build.
 
-**Status: Phase 3 — OT Point-of-Use Safety complete.** Authentication,
-multi-tenancy, RLS, equipment registry (Phase 1); sterilization cycles,
-packs, QR, evidence, verification, release (Phase 2); OT/ward point-of-use
-scanning, eligibility checks, incidents, quarantine, and realtime alerts
-(Phase 3) are functional and verified against a local Supabase stack — see
-`docs/architecture/phase-1-foundation.md`, `phase-2-cssd-core.md`, and
-`phase-3-ot-safety.md`.
+**Status: Phase 4 — Image Quality complete.** Authentication, multi-tenancy,
+RLS, equipment registry (Phase 1); sterilization cycles, packs, QR,
+evidence, verification, release (Phase 2); OT/ward point-of-use scanning,
+incidents, quarantine, realtime alerts (Phase 3); and client-side blur/
+exposure/glare checks that gate evidence capture before upload (Phase 4)
+are functional and verified against a local Supabase stack — see
+`docs/architecture/phase-1-foundation.md` through `phase-4-image-quality.md`.
 
 ## Monorepo layout
 
@@ -86,6 +86,12 @@ CRITICAL notification in the bell icon, delivered over Supabase Realtime).
 Sign in as the supervisor to acknowledge/resolve the incident and release
 the quarantine from the Incidents and Quarantine pages.
 
+To see the image quality gate, try uploading a deliberately blurry or dark
+photo as evidence on a cycle — it's rejected client-side with the specific
+reason(s) before it ever reaches storage, and never appears in the evidence
+list. A normal, well-lit photo is accepted and its blur/brightness/glare
+scores are stored on the `evidence_files` row alongside it.
+
 ### 3. Run the mobile app
 
 Requires the Flutter SDK, which is not installed in this environment. Once
@@ -115,7 +121,7 @@ rollback;
 
 ## Roadmap
 
-Phases 1-3 (Foundation, CSSD Core, OT Point-of-Use Safety) are done. Next:
-Phase 4 — Image Quality / OpenCV, the first mandatory AI phase (blur/
-exposure/glare checks on captured evidence before OCR and multimodal AI in
-Phases 5-6). See the master prompt for the full phase list.
+Phases 1-4 (Foundation, CSSD Core, OT Point-of-Use Safety, Image Quality)
+are done. Next: Phase 5 — OCR / Document AI (Google Document AI on
+autoclave thermal receipts, human-confirmed structured extraction). See
+the master prompt for the full phase list.

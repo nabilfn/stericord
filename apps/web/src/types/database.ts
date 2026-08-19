@@ -157,6 +157,13 @@ export interface InstrumentPack {
   updated_at: string;
 }
 
+export type EvidenceQualityStatus = "ACCEPTED" | "RETAKE_REQUIRED";
+export type EvidenceQualityReason =
+  | "IMAGE_TOO_BLURRY"
+  | "IMAGE_TOO_DARK"
+  | "GLARE_DETECTED"
+  | "INDICATOR_NOT_IN_FRAME";
+
 export interface EvidenceFile {
   id: string;
   organization_id: string;
@@ -173,6 +180,11 @@ export interface EvidenceFile {
   captured_by: string | null;
   captured_at: string;
   created_at: string;
+  quality_status: EvidenceQualityStatus | null;
+  quality_reasons: EvidenceQualityReason[];
+  blur_score: number | null;
+  brightness_score: number | null;
+  glare_ratio: number | null;
 }
 
 export interface Verification {

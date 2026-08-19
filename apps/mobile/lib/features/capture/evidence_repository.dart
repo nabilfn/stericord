@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:stericord_mobile/core/network/supabase_client_provider.dart';
+import 'package:stericord_mobile/core/vision/image_quality.dart';
 import 'package:stericord_mobile/features/capture/evidence_model.dart';
 
 class EvidenceRepository {
@@ -23,6 +24,7 @@ class EvidenceRepository {
     required EvidenceType evidenceType,
     required File file,
     required String capturedBy,
+    ImageQualityResult? quality,
   }) async {
     final bytes = await file.readAsBytes();
     final sha256Hash = sha256.convert(bytes).toString();
@@ -45,6 +47,13 @@ class EvidenceRepository {
           'sha256_hash': sha256Hash,
           'evidence_type': evidenceType.dbValue,
           'captured_by': capturedBy,
+          'quality_status': quality == null
+              ? null
+              : (quality.status == QualityStatus.accepted ? 'ACCEPTED' : 'RETAKE_REQUIRED'),
+          'quality_reasons': quality?.reasons.map((r) => r.dbValue).toList() ?? [],
+          'blur_score': quality?.blurScore,
+          'brightness_score': quality?.brightnessScore,
+          'glare_ratio': quality?.glareRatio,
         })
         .select()
         .single();

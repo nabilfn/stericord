@@ -1,6 +1,7 @@
 import { supabase } from "@/services/supabaseClient";
 import { storageProvider } from "@/services/storageProvider";
 import type { EvidenceFile, EvidenceType } from "@/types/database";
+import type { ImageQualityResult } from "@/services/imageQuality";
 
 const BUCKET = "evidence";
 
@@ -22,10 +23,12 @@ export interface UploadEvidenceInput {
   evidenceType: EvidenceType;
   file: File;
   capturedBy: string;
+  /** Omitted for non-image evidence (e.g. a PDF receipt) that pixel analysis can't assess. */
+  quality?: ImageQualityResult;
 }
 
 export async function uploadEvidence(input: UploadEvidenceInput): Promise<EvidenceFile> {
-  const { organizationId, entityType, entityId, evidenceType, file, capturedBy } = input;
+  const { organizationId, entityType, entityId, evidenceType, file, capturedBy, quality } = input;
   const objectPath = `${organizationId}/${entityType}/${entityId}/${Date.now()}-${file.name}`;
 
   const [hash] = await Promise.all([
@@ -47,6 +50,11 @@ export async function uploadEvidence(input: UploadEvidenceInput): Promise<Eviden
       sha256_hash: hash,
       evidence_type: evidenceType,
       captured_by: capturedBy,
+      quality_status: quality?.status ?? null,
+      quality_reasons: quality?.reasons ?? [],
+      blur_score: quality?.blurScore ?? null,
+      brightness_score: quality?.brightnessScore ?? null,
+      glare_ratio: quality?.glareRatio ?? null,
     })
     .select()
     .single();
