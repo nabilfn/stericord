@@ -344,3 +344,23 @@ export interface OcrExtraction {
   requested_by: string | null;
   created_at: string;
 }
+
+export type AiAnalysisStatus = "COMPLETED" | "FAILED" | "NOT_CONFIGURED";
+export type AiConfidenceBand = "HIGH" | "MEDIUM" | "LOW";
+
+export interface AiAnalysis {
+  id: string;
+  organization_id: string;
+  evidence_file_id: string;
+  provider: string;
+  model: string | null;
+  status: AiAnalysisStatus;
+  indicator_type: EvidenceType | null;
+  suggested_result: VerificationResult | null;
+  confidence: number | null;
+  confidence_band: AiConfidenceBand | null;
+  observations: string[];
+  error_message: string | null;
+  requested_by: string | null;
+  created_at: string;
+}

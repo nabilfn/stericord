@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:stericord_mobile/core/theme/app_theme.dart';
+import 'package:stericord_mobile/features/ai/ai_model.dart';
+import 'package:stericord_mobile/features/ai/ai_repository.dart';
 import 'package:stericord_mobile/features/cycles/cycle_model.dart';
 import 'package:stericord_mobile/features/cycles/cycle_repository.dart';
 
@@ -14,9 +16,31 @@ class VerifyCycleSheet extends StatefulWidget {
 class _VerifyCycleSheetState extends State<VerifyCycleSheet> {
   final _notesController = TextEditingController();
   final _repository = CycleRepository();
+  final _aiRepository = AiRepository();
   VerificationResult? _result;
   bool _submitting = false;
   String? _error;
+  AiAnalysis? _aiSuggestion;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAiSuggestion();
+  }
+
+  Future<void> _loadAiSuggestion() async {
+    final suggestion = await _aiRepository.getLatestIndicatorAnalysis('sterilization_cycle', widget.cycleId);
+    if (!mounted) return;
+    setState(() {
+      _aiSuggestion = suggestion;
+      if (suggestion?.suggestedResult != null && _result == null) {
+        _result = VerificationResult.values.firstWhere(
+          (r) => r.dbValue == suggestion!.suggestedResult,
+          orElse: () => VerificationResult.undetermined,
+        );
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -31,7 +55,12 @@ class _VerifyCycleSheetState extends State<VerifyCycleSheet> {
       _error = null;
     });
     try {
-      await _repository.verifyCycle(widget.cycleId, _result!, notes: _notesController.text.trim());
+      await _repository.verifyCycle(
+        widget.cycleId,
+        _result!,
+        notes: _notesController.text.trim(),
+        aiAnalysisId: _aiSuggestion?.id,
+      );
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
       setState(() => _error = e.toString());
@@ -54,6 +83,28 @@ class _VerifyCycleSheetState extends State<VerifyCycleSheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Text('Manual Verification', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+          if (_aiSuggestion?.suggestedResult != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: AppColors.scBlueLight, borderRadius: BorderRadius.circular(8)),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.auto_awesome, size: 16, color: AppColors.scBlue),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'AI suggests ${_aiSuggestion!.suggestedResult}'
+                      '${_aiSuggestion!.confidenceBand != null ? ' (${_aiSuggestion!.confidenceBand} confidence)' : ''} '
+                      'from the captured indicator evidence. Advisory only — confirm or override below.',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           _ResultOption(
             title: 'PASS',

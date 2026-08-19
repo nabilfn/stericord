@@ -1,9 +1,12 @@
-import { useState, type FormEvent } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState, type FormEvent } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Sparkles } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Label } from "@/components/ui/Input";
+import { Badge } from "@/components/ui/Badge";
 import { verifyCycle } from "@/features/cycles/api";
+import { getLatestIndicatorAnalysis } from "@/features/ai/api";
 import type { VerificationResult } from "@/types/database";
 
 const results: { value: VerificationResult; label: string; description: string }[] = [
@@ -26,8 +29,22 @@ export function VerifyCycleDialog({
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+  const aiQuery = useQuery({
+    queryKey: ["ai-analyses", "latest", "sterilization_cycle", cycleId],
+    queryFn: () => getLatestIndicatorAnalysis("sterilization_cycle", cycleId),
+    enabled: open,
+  });
+  const aiSuggestion = aiQuery.data;
+
+  useEffect(() => {
+    if (open && aiSuggestion?.suggested_result && !result) {
+      setResult(aiSuggestion.suggested_result);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aiSuggestion?.id, open]);
+
   const mutation = useMutation({
-    mutationFn: () => verifyCycle(cycleId, result as VerificationResult, notes || undefined),
+    mutationFn: () => verifyCycle(cycleId, result as VerificationResult, notes || undefined, aiSuggestion?.id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["cycles", cycleId] });
       void queryClient.invalidateQueries({ queryKey: ["packs", cycleId] });
@@ -53,6 +70,23 @@ export function VerifyCycleDialog({
   return (
     <Modal open={open} title="Manual Verification" onClose={reset}>
       <form className="space-y-4" onSubmit={handleSubmit}>
+        {aiSuggestion?.suggested_result && (
+          <div className="flex items-start gap-2 rounded-md bg-sc-blue-light p-3 text-xs text-slate-700">
+            <Sparkles size={14} className="mt-0.5 shrink-0 text-sc-blue" />
+            <div>
+              <p>
+                AI suggests <strong>{aiSuggestion.suggested_result}</strong>
+                {aiSuggestion.confidence_band && ` (${aiSuggestion.confidence_band} confidence)`} from the captured
+                indicator evidence. This is advisory only — confirm or override below.
+              </p>
+              {aiSuggestion.confidence_band === "LOW" && (
+                <Badge tone="warning" className="mt-1">
+                  Low confidence — inspect manually
+                </Badge>
+              )}
+            </div>
+          </div>
+        )}
         <div className="space-y-2">
           {results.map((r) => (
             <label

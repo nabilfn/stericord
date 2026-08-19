@@ -71,11 +71,13 @@ export async function verifyCycle(
   cycleId: string,
   result: VerificationResult,
   notes?: string,
+  aiAnalysisId?: string,
 ): Promise<SterilizationCycle> {
   const { data, error } = await supabase.rpc("verify_cycle", {
     p_cycle_id: cycleId,
     p_result: result,
     p_notes: notes ?? null,
+    p_ai_analysis_id: aiAnalysisId ?? null,
   });
   if (error) throw error;
   return data as SterilizationCycle;

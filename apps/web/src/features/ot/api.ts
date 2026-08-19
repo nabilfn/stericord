@@ -20,6 +20,7 @@ export interface RecordPointOfUseInput {
   patientReference?: string;
   encounterReference?: string;
   notes?: string;
+  aiAnalysisId?: string;
 }
 
 export async function recordPointOfUseVerification(input: RecordPointOfUseInput): Promise<PointOfUseRecord> {
@@ -30,6 +31,7 @@ export async function recordPointOfUseVerification(input: RecordPointOfUseInput)
     p_patient_reference: input.patientReference ?? null,
     p_encounter_reference: input.encounterReference ?? null,
     p_notes: input.notes ?? null,
+    p_ai_analysis_id: input.aiAnalysisId ?? null,
   });
   if (error) throw error;
   return data as PointOfUseRecord;

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:stericord_mobile/core/theme/app_theme.dart';
+import 'package:stericord_mobile/features/ai/ai_model.dart';
+import 'package:stericord_mobile/features/ai/ai_repository.dart';
 import 'package:stericord_mobile/features/capture/evidence_capture_widget.dart';
 import 'package:stericord_mobile/features/cycles/cycle_model.dart';
 import 'package:stericord_mobile/features/ot/point_of_use_repository.dart';
@@ -18,6 +20,7 @@ class PointOfUseVerifyPage extends StatefulWidget {
 class _PointOfUseVerifyPageState extends State<PointOfUseVerifyPage> {
   final _packRepository = PackRepository();
   final _pouRepository = PointOfUseRepository();
+  final _aiRepository = AiRepository();
   final _patientRefController = TextEditingController();
   final _encounterRefController = TextEditingController();
   final _notesController = TextEditingController();
@@ -29,6 +32,7 @@ class _PointOfUseVerifyPageState extends State<PointOfUseVerifyPage> {
   bool _submitting = false;
   String? _error;
   String? _outcome;
+  AiAnalysis? _aiSuggestion;
 
   @override
   void initState() {
@@ -45,12 +49,27 @@ class _PointOfUseVerifyPageState extends State<PointOfUseVerifyPage> {
         _eligibility = eligibility;
         _loading = false;
       });
+      await _refreshAiSuggestion();
     } catch (e) {
       setState(() {
         _error = e.toString();
         _loading = false;
       });
     }
+  }
+
+  Future<void> _refreshAiSuggestion() async {
+    final suggestion = await _aiRepository.getLatestIndicatorAnalysis('instrument_pack', widget.packId);
+    if (!mounted) return;
+    setState(() {
+      _aiSuggestion = suggestion;
+      if (suggestion?.suggestedResult != null && _result == null) {
+        _result = VerificationResult.values.firstWhere(
+          (r) => r.dbValue == suggestion!.suggestedResult,
+          orElse: () => VerificationResult.undetermined,
+        );
+      }
+    });
   }
 
   @override
@@ -75,6 +94,7 @@ class _PointOfUseVerifyPageState extends State<PointOfUseVerifyPage> {
         encounterReference:
             _encounterRefController.text.trim().isEmpty ? null : _encounterRefController.text.trim(),
         notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+        aiAnalysisId: _aiSuggestion?.id,
       );
       setState(() => _outcome = _result!.dbValue);
     } catch (e) {
@@ -178,7 +198,38 @@ class _PointOfUseVerifyPageState extends State<PointOfUseVerifyPage> {
           const SizedBox(height: 8),
           EvidenceCaptureWidget(entityType: 'instrument_pack', entityId: pack.id),
           const SizedBox(height: 16),
-          Text('Verification result', style: Theme.of(context).textTheme.titleSmall),
+          if (_aiSuggestion?.suggestedResult != null)
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: AppColors.scBlueLight, borderRadius: BorderRadius.circular(8)),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.auto_awesome, size: 16, color: AppColors.scBlue),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'AI suggests ${_aiSuggestion!.suggestedResult}'
+                      '${_aiSuggestion!.confidenceBand != null ? ' (${_aiSuggestion!.confidenceBand} confidence)' : ''} '
+                      'from the captured indicator evidence. Advisory only.',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Verification result', style: Theme.of(context).textTheme.titleSmall),
+              TextButton.icon(
+                onPressed: _refreshAiSuggestion,
+                icon: const Icon(Icons.refresh, size: 14),
+                label: const Text('Check AI suggestion', style: TextStyle(fontSize: 11)),
+              ),
+            ],
+          ),
           const SizedBox(height: 8),
           Row(
             children: [

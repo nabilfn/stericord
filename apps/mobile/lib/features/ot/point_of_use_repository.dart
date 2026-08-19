@@ -23,6 +23,7 @@ class PointOfUseRepository {
     String? patientReference,
     String? encounterReference,
     String? notes,
+    String? aiAnalysisId,
   }) async {
     await SupabaseClientProvider.client.rpc('record_point_of_use_verification', params: {
       'p_pack_id': packId,
@@ -31,6 +32,7 @@ class PointOfUseRepository {
       'p_patient_reference': patientReference,
       'p_encounter_reference': encounterReference,
       'p_notes': notes,
+      'p_ai_analysis_id': aiAnalysisId,
     });
   }
 }

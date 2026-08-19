@@ -1,12 +1,13 @@
 import { useState, type FormEvent } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Search, ScanLine } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Search, ScanLine, Sparkles } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input, Label } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { findPackByCode } from "@/features/packs/api";
 import { checkPackEligibility, recordPointOfUseVerification, type EligibilityResult } from "@/features/ot/api";
+import { getLatestIndicatorAnalysis } from "@/features/ai/api";
 import { PackStatusBadge } from "@/features/packs/PackStatusBadge";
 import { EvidenceUploadForm } from "@/features/evidence/EvidenceUploadForm";
 import { EvidenceList } from "@/features/evidence/EvidenceList";
@@ -44,6 +45,13 @@ export function PointOfUsePage() {
     },
   });
 
+  const aiQuery = useQuery({
+    queryKey: ["ai-analyses", "latest", "instrument_pack", pack?.id],
+    queryFn: () => getLatestIndicatorAnalysis("instrument_pack", pack!.id),
+    enabled: Boolean(pack && eligibility?.eligible),
+  });
+  const aiSuggestion = aiQuery.data;
+
   const verifyMutation = useMutation({
     mutationFn: () =>
       recordPointOfUseVerification({
@@ -52,6 +60,7 @@ export function PointOfUsePage() {
         patientReference: patientReference || undefined,
         encounterReference: encounterReference || undefined,
         notes: notes || undefined,
+        aiAnalysisId: aiSuggestion?.id,
       }),
     onSuccess: (record) => {
       setOutcome({ result: record.verification_result });
@@ -151,6 +160,17 @@ export function PointOfUsePage() {
                     <EvidenceList entityType="instrument_pack" entityId={pack.id} />
                   </div>
                 </div>
+
+                {aiSuggestion?.suggested_result && (
+                  <div className="flex items-start gap-2 rounded-md bg-sc-blue-light p-3 text-xs text-slate-700">
+                    <Sparkles size={14} className="mt-0.5 shrink-0 text-sc-blue" />
+                    <p>
+                      AI suggests <strong>{aiSuggestion.suggested_result}</strong>
+                      {aiSuggestion.confidence_band && ` (${aiSuggestion.confidence_band} confidence)`} from the
+                      captured indicator evidence — advisory only, confirm or override below.
+                    </p>
+                  </div>
+                )}
 
                 <div>
                   <Label>Verification result</Label>

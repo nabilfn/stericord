@@ -8,6 +8,7 @@ import 'package:stericord_mobile/features/auth/auth_controller.dart';
 import 'package:stericord_mobile/features/capture/evidence_model.dart';
 import 'package:stericord_mobile/features/capture/evidence_repository.dart';
 import 'package:stericord_mobile/features/ocr/ocr_review_sheet.dart';
+import 'package:stericord_mobile/features/ai/ai_analysis_sheet.dart';
 
 class EvidenceCaptureWidget extends StatefulWidget {
   final String entityType;
@@ -160,25 +161,48 @@ class _EvidenceCaptureWidgetState extends State<EvidenceCaptureWidget> {
                         contentPadding: EdgeInsets.zero,
                         leading: const Icon(Icons.description_outlined, size: 18),
                         title: Text(f.evidenceType.label),
-                        trailing: f.evidenceType == EvidenceType.autoclaveReceipt
-                            ? TextButton(
-                                onPressed: () => showModalBottomSheet(
-                                  context: context,
-                                  isScrollControlled: true,
-                                  builder: (_) => OcrReviewSheet(evidenceFileId: f.id),
-                                ),
-                                child: const Text('OCR', style: TextStyle(fontSize: 12)),
-                              )
-                            : Text(
-                                '${f.capturedAt.hour.toString().padLeft(2, '0')}:${f.capturedAt.minute.toString().padLeft(2, '0')}',
-                                style: const TextStyle(color: Colors.grey, fontSize: 12),
-                              ),
+                        trailing: _trailingFor(context, f),
                       ))
                   .toList(),
             );
           },
         ),
       ],
+    );
+  }
+
+  static const _indicatorTypes = {
+    EvidenceType.bowieDick,
+    EvidenceType.chemicalIndicator,
+    EvidenceType.biTray,
+    EvidenceType.otIndicator,
+    EvidenceType.washerTest,
+  };
+
+  Widget _trailingFor(BuildContext context, EvidenceFile f) {
+    if (f.evidenceType == EvidenceType.autoclaveReceipt) {
+      return TextButton(
+        onPressed: () => showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          builder: (_) => OcrReviewSheet(evidenceFileId: f.id),
+        ),
+        child: const Text('OCR', style: TextStyle(fontSize: 12)),
+      );
+    }
+    if (_indicatorTypes.contains(f.evidenceType)) {
+      return TextButton(
+        onPressed: () => showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          builder: (_) => AiAnalysisSheet(evidenceFileId: f.id),
+        ),
+        child: const Text('AI', style: TextStyle(fontSize: 12)),
+      );
+    }
+    return Text(
+      '${f.capturedAt.hour.toString().padLeft(2, '0')}:${f.capturedAt.minute.toString().padLeft(2, '0')}',
+      style: const TextStyle(color: Colors.grey, fontSize: 12),
     );
   }
 }

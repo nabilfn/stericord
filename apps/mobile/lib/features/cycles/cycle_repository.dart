@@ -65,11 +65,17 @@ class CycleRepository {
     return SterilizationCycle.fromJson(data as Map<String, dynamic>);
   }
 
-  Future<SterilizationCycle> verifyCycle(String cycleId, VerificationResult result, {String? notes}) async {
+  Future<SterilizationCycle> verifyCycle(
+    String cycleId,
+    VerificationResult result, {
+    String? notes,
+    String? aiAnalysisId,
+  }) async {
     final data = await SupabaseClientProvider.client.rpc('verify_cycle', params: {
       'p_cycle_id': cycleId,
       'p_result': result.dbValue,
       'p_notes': notes,
+      'p_ai_analysis_id': aiAnalysisId,
     });
     return SterilizationCycle.fromJson(data as Map<String, dynamic>);
   }

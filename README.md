@@ -4,16 +4,18 @@ Hospital sterilization traceability and assurance platform. See
 [SteriCord_Updated_Master_Development_Prompt.md](./SteriCord_Updated_Master_Development_Prompt.md)
 for the full product/phase specification driving this build.
 
-**Status: Phase 5 — OCR / Document AI complete.** Authentication,
+**Status: Phase 6 — Multimodal AI (Gemini) complete.** Authentication,
 multi-tenancy, RLS, equipment registry (Phase 1); sterilization cycles,
 packs, QR, evidence, verification, release (Phase 2); OT/ward point-of-use
 scanning, incidents, quarantine, realtime alerts (Phase 3); client-side
-blur/exposure/glare checks (Phase 4); and a Document AI OCR pipeline with
-mandatory human confirmation (Phase 5) are functional. Phases 1-4 and the
-OCR pipeline's plumbing are verified against a local Supabase stack; the
-actual Google Document AI call is untested since this environment has no
-real GCP credentials — see `docs/architecture/phase-5-ocr.md` for exactly
-what was and wasn't verified.
+blur/exposure/glare checks (Phase 4); Document AI OCR with mandatory human
+confirmation (Phase 5); and Gemini-based indicator classification with
+enforced confidence routing (Phase 6) are functional. Phases 1-4 and the
+OCR/AI pipelines' plumbing are verified against a local Supabase stack; the
+actual Google Document AI and Gemini API calls are untested since this
+environment has no real GCP/Gemini credentials — see
+`docs/architecture/phase-5-ocr.md` and `phase-6-multimodal-ai.md` for
+exactly what was and wasn't verified.
 
 ## Monorepo layout
 
@@ -104,6 +106,16 @@ real Document AI call, set up
 [`supabase/functions/.env`](./supabase/functions/.env.example) with a real
 GCP project/processor/service-account key and restart `supabase start`.
 
+To try AI indicator analysis, upload a BOWIE_DICK/CHEMICAL_INDICATOR/
+BI_TRAY/OT_INDICATOR/WASHER_TEST evidence photo and click "AI analysis" →
+"Analyze with AI". Without a `GEMINI_API_KEY`, it comes back
+`NOT_CONFIGURED` the same way OCR does. With one configured, its suggestion
+(and confidence band) shows as an advisory banner in the cycle Verify
+dialog and the Point of Use verification form, pre-selecting — never
+auto-submitting — the matching result; a LOW-confidence read is always
+forced to `UNDETERMINED` server-side before it's ever stored, regardless
+of what the model actually said.
+
 ### 3. Run the mobile app
 
 Requires the Flutter SDK, which is not installed in this environment. Once
@@ -133,7 +145,8 @@ rollback;
 
 ## Roadmap
 
-Phases 1-5 (Foundation, CSSD Core, OT Point-of-Use Safety, Image Quality,
-OCR / Document AI) are done. Next: Phase 6 — Multimodal AI (Gemini), the
-last mandatory AI phase, plus the confidence-routing engine (section 36).
-See the master prompt for the full phase list.
+Phases 1-6 (Foundation, CSSD Core, OT Point-of-Use Safety, Image Quality,
+OCR / Document AI, Multimodal AI) are done — every mandatory AI phase is
+now in place. Next: Phase 7 — Compliance & Reporting (audit trail views,
+compliance reports, retention rules, exports). See the master prompt for
+the full phase list.
