@@ -7,6 +7,7 @@ import 'package:stericord_mobile/core/vision/image_quality.dart';
 import 'package:stericord_mobile/features/auth/auth_controller.dart';
 import 'package:stericord_mobile/features/capture/evidence_model.dart';
 import 'package:stericord_mobile/features/capture/evidence_repository.dart';
+import 'package:stericord_mobile/features/ocr/ocr_review_sheet.dart';
 
 class EvidenceCaptureWidget extends StatefulWidget {
   final String entityType;
@@ -159,10 +160,19 @@ class _EvidenceCaptureWidgetState extends State<EvidenceCaptureWidget> {
                         contentPadding: EdgeInsets.zero,
                         leading: const Icon(Icons.description_outlined, size: 18),
                         title: Text(f.evidenceType.label),
-                        trailing: Text(
-                          '${f.capturedAt.hour.toString().padLeft(2, '0')}:${f.capturedAt.minute.toString().padLeft(2, '0')}',
-                          style: const TextStyle(color: Colors.grey, fontSize: 12),
-                        ),
+                        trailing: f.evidenceType == EvidenceType.autoclaveReceipt
+                            ? TextButton(
+                                onPressed: () => showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  builder: (_) => OcrReviewSheet(evidenceFileId: f.id),
+                                ),
+                                child: const Text('OCR', style: TextStyle(fontSize: 12)),
+                              )
+                            : Text(
+                                '${f.capturedAt.hour.toString().padLeft(2, '0')}:${f.capturedAt.minute.toString().padLeft(2, '0')}',
+                                style: const TextStyle(color: Colors.grey, fontSize: 12),
+                              ),
                       ))
                   .toList(),
             );

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { FileText } from "lucide-react";
 import { getEvidenceSignedUrl, listEvidence } from "@/features/evidence/api";
+import { OcrPanel } from "@/features/ocr/OcrPanel";
 
 export function EvidenceList({ entityType, entityId }: { entityType: string; entityId: string }) {
   const { data: files } = useQuery({
@@ -32,6 +33,7 @@ export function EvidenceList({ entityType, entityId }: { entityType: string; ent
             </span>
             <span className="text-xs text-slate-400">{new Date(file.captured_at).toLocaleString()}</span>
           </button>
+          {file.evidence_type === "AUTOCLAVE_RECEIPT" && <OcrPanel evidenceFileId={file.id} />}
         </li>
       ))}
     </ul>

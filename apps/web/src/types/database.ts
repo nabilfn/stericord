@@ -314,3 +314,33 @@ export interface AppNotification {
   read_at: string | null;
   created_at: string;
 }
+
+export type OcrExtractionStatus = "COMPLETED" | "FAILED" | "NOT_CONFIGURED";
+
+export interface ExtractedCycleFields {
+  cycle_number: string | null;
+  temperature: number | null;
+  pressure: number | null;
+  hold_time_seconds: number | null;
+  date: string | null;
+  time: string | null;
+  machine_identifier: string | null;
+  result: string | null;
+}
+
+export interface OcrExtraction {
+  id: string;
+  organization_id: string;
+  evidence_file_id: string;
+  provider: string;
+  status: OcrExtractionStatus;
+  raw_text: string | null;
+  extracted_fields: Partial<ExtractedCycleFields>;
+  confidence: number | null;
+  error_message: string | null;
+  human_confirmed_fields: Partial<ExtractedCycleFields> | null;
+  confirmed_by: string | null;
+  confirmed_at: string | null;
+  requested_by: string | null;
+  created_at: string;
+}

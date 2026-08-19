@@ -4,13 +4,16 @@ Hospital sterilization traceability and assurance platform. See
 [SteriCord_Updated_Master_Development_Prompt.md](./SteriCord_Updated_Master_Development_Prompt.md)
 for the full product/phase specification driving this build.
 
-**Status: Phase 4 — Image Quality complete.** Authentication, multi-tenancy,
-RLS, equipment registry (Phase 1); sterilization cycles, packs, QR,
-evidence, verification, release (Phase 2); OT/ward point-of-use scanning,
-incidents, quarantine, realtime alerts (Phase 3); and client-side blur/
-exposure/glare checks that gate evidence capture before upload (Phase 4)
-are functional and verified against a local Supabase stack — see
-`docs/architecture/phase-1-foundation.md` through `phase-4-image-quality.md`.
+**Status: Phase 5 — OCR / Document AI complete.** Authentication,
+multi-tenancy, RLS, equipment registry (Phase 1); sterilization cycles,
+packs, QR, evidence, verification, release (Phase 2); OT/ward point-of-use
+scanning, incidents, quarantine, realtime alerts (Phase 3); client-side
+blur/exposure/glare checks (Phase 4); and a Document AI OCR pipeline with
+mandatory human confirmation (Phase 5) are functional. Phases 1-4 and the
+OCR pipeline's plumbing are verified against a local Supabase stack; the
+actual Google Document AI call is untested since this environment has no
+real GCP credentials — see `docs/architecture/phase-5-ocr.md` for exactly
+what was and wasn't verified.
 
 ## Monorepo layout
 
@@ -92,6 +95,15 @@ reason(s) before it ever reaches storage, and never appears in the evidence
 list. A normal, well-lit photo is accepted and its blur/brightness/glare
 scores are stored on the `evidence_files` row alongside it.
 
+To try OCR, upload an AUTOCLAVE_RECEIPT evidence photo, then click "Extract
+with OCR" on it. Without real Google Cloud credentials configured (the
+default here), it comes back `NOT_CONFIGURED` with a clear message and an
+empty confirmation form — fill in values by hand and confirm; the same
+form works identically when OCR did run, just pre-filled. To exercise the
+real Document AI call, set up
+[`supabase/functions/.env`](./supabase/functions/.env.example) with a real
+GCP project/processor/service-account key and restart `supabase start`.
+
 ### 3. Run the mobile app
 
 Requires the Flutter SDK, which is not installed in this environment. Once
@@ -121,7 +133,7 @@ rollback;
 
 ## Roadmap
 
-Phases 1-4 (Foundation, CSSD Core, OT Point-of-Use Safety, Image Quality)
-are done. Next: Phase 5 — OCR / Document AI (Google Document AI on
-autoclave thermal receipts, human-confirmed structured extraction). See
-the master prompt for the full phase list.
+Phases 1-5 (Foundation, CSSD Core, OT Point-of-Use Safety, Image Quality,
+OCR / Document AI) are done. Next: Phase 6 — Multimodal AI (Gemini), the
+last mandatory AI phase, plus the confidence-routing engine (section 36).
+See the master prompt for the full phase list.
