@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { Wrench, ClipboardCheck, PackageCheck, AlertTriangle } from "lucide-react";
+import { Wrench, ClipboardCheck, AlertTriangle, ShieldAlert } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { listEquipment } from "@/features/equipment/api";
 import { listCycles } from "@/features/cycles/api";
+import { listIncidents } from "@/features/incidents/api";
 import { useAuth } from "@/contexts/AuthContext";
 
 function isToday(isoDate: string) {
@@ -15,17 +16,18 @@ export function DashboardPage() {
   const { profile } = useAuth();
   const { data: equipment } = useQuery({ queryKey: ["equipment"], queryFn: listEquipment });
   const { data: cycles } = useQuery({ queryKey: ["cycles"], queryFn: listCycles });
+  const { data: incidents } = useQuery({ queryKey: ["incidents"], queryFn: listIncidents });
 
   const activeCount = equipment?.filter((e) => e.operating_status === "ACTIVE").length ?? 0;
   const lockedOutCount = equipment?.filter((e) => e.operating_status === "LOCKED_OUT").length ?? 0;
 
   const cyclesCompletedToday =
     cycles?.filter((c) => c.completed_at && isToday(c.completed_at) && ["PASSED", "FAILED", "COMPLETED", "PENDING_VERIFICATION"].includes(c.cycle_status)).length ?? 0;
-  const openAlerts = cycles?.filter((c) => c.cycle_status === "FAILED" || c.cycle_status === "QUARANTINED").length ?? 0;
+  const openIncidents = incidents?.filter((i) => !["RESOLVED", "CLOSED"].includes(i.status)).length ?? 0;
 
   const stats = [
     { label: "Cycles Completed Today", value: cyclesCompletedToday, icon: ClipboardCheck, note: `${cycles?.length ?? 0} total cycles` },
-    { label: "Open Alerts", value: openAlerts, icon: PackageCheck, note: "Failed or quarantined cycles" },
+    { label: "Open Incidents", value: openIncidents, icon: ShieldAlert, note: "OT / CSSD safety events" },
     { label: "Active Equipment", value: activeCount, icon: Wrench, note: `${equipment?.length ?? 0} total` },
     { label: "Locked Out Equipment", value: lockedOutCount, icon: AlertTriangle, note: "Requires review" },
   ];
@@ -66,9 +68,7 @@ export function DashboardPage() {
         </CardHeader>
         <CardContent>
           {recentCycles.length === 0 ? (
-            <p className="text-sm text-slate-500">
-              No cycles yet. OT point-of-use verification becomes available in Phase 3.
-            </p>
+            <p className="text-sm text-slate-500">No cycles yet.</p>
           ) : (
             <ul className="divide-y divide-slate-100">
               {recentCycles.map((cycle) => (

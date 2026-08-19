@@ -217,3 +217,88 @@ export interface AuditEvent {
   event_hash: string;
   previous_event_hash: string | null;
 }
+
+export interface PointOfUseRecord {
+  id: string;
+  organization_id: string;
+  pack_id: string;
+  department_id: string | null;
+  patient_reference: string | null;
+  encounter_reference: string | null;
+  eligibility_passed: boolean;
+  eligibility_reason: string | null;
+  verification_result: VerificationResult;
+  notes: string | null;
+  scanned_by: string;
+  scanned_at: string;
+  created_at: string;
+}
+
+export type IncidentStatus =
+  | "DETECTED"
+  | "ALERTED"
+  | "ACKNOWLEDGED"
+  | "REPLACEMENT_DISPATCHED"
+  | "REPLACEMENT_RECEIVED"
+  | "QUARANTINE_IN_PROGRESS"
+  | "NCR_OPEN"
+  | "RESOLVED"
+  | "CLOSED";
+
+export type IncidentPriority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+
+export interface Incident {
+  id: string;
+  organization_id: string;
+  source_type: string;
+  related_entity_type: string;
+  related_entity_id: string | null;
+  point_of_use_record_id: string | null;
+  status: IncidentStatus;
+  priority: IncidentPriority;
+  description: string | null;
+  detected_by: string | null;
+  detected_at: string;
+  acknowledged_by: string | null;
+  acknowledged_at: string | null;
+  resolved_by: string | null;
+  resolved_at: string | null;
+  resolution_notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type QuarantineScope = "PACK" | "CYCLE" | "BATCH" | "EQUIPMENT_RELATED_GROUP";
+export type QuarantineStatus = "ACTIVE" | "RELEASED";
+
+export interface Quarantine {
+  id: string;
+  organization_id: string;
+  source_incident_id: string | null;
+  scope_type: QuarantineScope;
+  scope_id: string;
+  reason: string;
+  status: QuarantineStatus;
+  initiated_by: string | null;
+  initiated_at: string;
+  released_by: string | null;
+  released_at: string | null;
+  release_reason: string | null;
+}
+
+export type NotificationPriority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+
+export interface AppNotification {
+  id: string;
+  organization_id: string;
+  recipient_user_id: string;
+  channel: string;
+  priority: NotificationPriority;
+  title: string;
+  body: string | null;
+  related_entity_type: string | null;
+  related_entity_id: string | null;
+  is_read: boolean;
+  read_at: string | null;
+  created_at: string;
+}

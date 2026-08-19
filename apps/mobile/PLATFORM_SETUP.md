@@ -23,3 +23,18 @@ cp .env.example .env   # fill in SUPABASE_URL / SUPABASE_ANON_KEY from `supabase
 flutter pub get
 flutter run
 ```
+
+## Camera permission (required for QR scanning, Phase 3+)
+
+`flutter create` does not add camera permission entries, and `mobile_scanner`
+needs one on each platform or the OT point-of-use scan screen will crash/
+black-screen at runtime:
+
+- **Android** (`android/app/src/main/AndroidManifest.xml`): add
+  `<uses-permission android:name="android.permission.CAMERA" />` above the
+  `<application>` tag.
+- **iOS** (`ios/Runner/Info.plist`): add an `NSCameraUsageDescription` key
+  with a user-facing string, e.g. "SteriCord needs the camera to scan
+  instrument pack QR codes."
+
+See the [mobile_scanner installation docs](https://pub.dev/packages/mobile_scanner#installation) for the current specifics.

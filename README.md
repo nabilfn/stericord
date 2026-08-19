@@ -4,11 +4,13 @@ Hospital sterilization traceability and assurance platform. See
 [SteriCord_Updated_Master_Development_Prompt.md](./SteriCord_Updated_Master_Development_Prompt.md)
 for the full product/phase specification driving this build.
 
-**Status: Phase 2 — CSSD Core complete.** Authentication, multi-tenancy, RLS,
-equipment registry (Phase 1), plus sterilization cycles, instrument sets/
-packs, QR generation, evidence capture, manual verification, and pack
-release (Phase 2) are functional and verified against a local Supabase stack
-(see `docs/architecture/phase-1-foundation.md` and `phase-2-cssd-core.md`).
+**Status: Phase 3 — OT Point-of-Use Safety complete.** Authentication,
+multi-tenancy, RLS, equipment registry (Phase 1); sterilization cycles,
+packs, QR, evidence, verification, release (Phase 2); OT/ward point-of-use
+scanning, eligibility checks, incidents, quarantine, and realtime alerts
+(Phase 3) are functional and verified against a local Supabase stack — see
+`docs/architecture/phase-1-foundation.md`, `phase-2-cssd-core.md`, and
+`phase-3-ot-safety.md`.
 
 ## Monorepo layout
 
@@ -76,6 +78,14 @@ Pack → Start Cycle → Complete Cycle → upload an evidence file → Submit f
 Verification → Verify Cycle (PASS) → Release the pack. A FAIL verification
 instead cascades every pending pack in that cycle to QUARANTINED.
 
+To try OT point-of-use safety, release a pack as above, then sign in as
+`nurse@hospital-a.test` and go to Point of Use → enter the pack code →
+record a PASS (pack marked `USED`) or a FAIL (pack quarantined, an incident
+is created, and `admin@hospital-a.test`/`supervisor@hospital-a.test` get a
+CRITICAL notification in the bell icon, delivered over Supabase Realtime).
+Sign in as the supervisor to acknowledge/resolve the incident and release
+the quarantine from the Incidents and Quarantine pages.
+
 ### 3. Run the mobile app
 
 Requires the Flutter SDK, which is not installed in this environment. Once
@@ -105,9 +115,7 @@ rollback;
 
 ## Roadmap
 
-Phases 1 (Foundation) and 2 (CSSD Core) are done. Next: Phase 3 — OT
-Point-of-Use Safety (QR scanning, pack eligibility checks, indicator
-capture, PASS/FAIL workflow, incidents, quarantine, alerts). See the master
-prompt for the full phase list — AI integration (OpenCV/OCR/Gemini) is
-mandatory but deliberately deferred until Phases 4-6, after CSSD and OT
-workflows are functional.
+Phases 1-3 (Foundation, CSSD Core, OT Point-of-Use Safety) are done. Next:
+Phase 4 — Image Quality / OpenCV, the first mandatory AI phase (blur/
+exposure/glare checks on captured evidence before OCR and multimodal AI in
+Phases 5-6). See the master prompt for the full phase list.
