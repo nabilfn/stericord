@@ -1,0 +1,137 @@
+openapi: 3.0.3
+info:
+  title: SteriCord API
+  version: 0.1.0
+  description: >
+    Language-independent contract for SteriCord entities, shared by the
+    Flutter (Dart) and React (TypeScript) frontends. Both clients currently
+    talk to Supabase's auto-generated PostgREST API directly; this document
+    exists so field names and enums stay in sync across languages, not as a
+    hand-written server to implement. Extend it phase by phase alongside
+    supabase/migrations.
+servers:
+  - url: http://127.0.0.1:54421/rest/v1
+    description: Local Supabase (see `supabase status` for the current port)
+
+components:
+  schemas:
+    UserRole:
+      type: string
+      enum:
+        - SYSTEM_ADMIN
+        - HOSPITAL_ADMIN
+        - CSSD_SUPERVISOR
+        - CSSD_TECHNICIAN
+        - OT_NURSE
+        - INFECTION_CONTROL
+        - AUDITOR
+        - BIOMEDICAL_ENGINEER
+        - QUALITY_MANAGER
+
+    EquipmentStatus:
+      type: string
+      enum: [ACTIVE, LOCKED_OUT, MAINTENANCE, DECOMMISSIONED]
+
+    EquipmentType:
+      type: string
+      enum:
+        - STEAM_AUTOCLAVE
+        - ETO_STERILIZER
+        - PLASMA_STERILIZER
+        - WASHER_DISINFECTOR
+        - ULTRASONIC_CLEANER
+        - OTHER
+
+    Organization:
+      type: object
+      required: [id, name, slug, is_active, created_at, updated_at]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        slug: { type: string }
+        is_active: { type: boolean }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    Department:
+      type: object
+      required: [id, organization_id, name, code, is_active]
+      properties:
+        id: { type: string, format: uuid }
+        organization_id: { type: string, format: uuid }
+        name: { type: string }
+        code: { type: string }
+        is_active: { type: boolean }
+
+    Profile:
+      type: object
+      required: [id, organization_id, full_name, email, is_active]
+      properties:
+        id: { type: string, format: uuid }
+        organization_id: { type: string, format: uuid }
+        department_id: { type: string, format: uuid, nullable: true }
+        full_name: { type: string }
+        email: { type: string, format: email }
+        phone: { type: string, nullable: true }
+        is_active: { type: boolean }
+
+    UserRoleGrant:
+      type: object
+      required: [id, user_id, organization_id, role, granted_at]
+      properties:
+        id: { type: string, format: uuid }
+        user_id: { type: string, format: uuid }
+        organization_id: { type: string, format: uuid }
+        role: { $ref: "#/components/schemas/UserRole" }
+        granted_by: { type: string, format: uuid, nullable: true }
+        granted_at: { type: string, format: date-time }
+        revoked_by: { type: string, format: uuid, nullable: true }
+        revoked_at: { type: string, format: date-time, nullable: true }
+
+    Equipment:
+      type: object
+      required: [id, organization_id, equipment_code, equipment_type, operating_status]
+      properties:
+        id: { type: string, format: uuid }
+        organization_id: { type: string, format: uuid }
+        department_id: { type: string, format: uuid, nullable: true }
+        equipment_code: { type: string }
+        equipment_type: { $ref: "#/components/schemas/EquipmentType" }
+        manufacturer: { type: string, nullable: true }
+        model_name: { type: string, nullable: true }
+        serial_number: { type: string, nullable: true }
+        location: { type: string, nullable: true }
+        operating_status: { $ref: "#/components/schemas/EquipmentStatus" }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    EquipmentStatusEvent:
+      type: object
+      required: [id, organization_id, equipment_id, new_status, changed_at]
+      properties:
+        id: { type: string, format: uuid }
+        organization_id: { type: string, format: uuid }
+        equipment_id: { type: string, format: uuid }
+        previous_status: { $ref: "#/components/schemas/EquipmentStatus" }
+        new_status: { $ref: "#/components/schemas/EquipmentStatus" }
+        reason: { type: string, nullable: true }
+        changed_by: { type: string, format: uuid, nullable: true }
+        changed_at: { type: string, format: date-time }
+
+    AuditEvent:
+      type: object
+      required: [id, organization_id, event_type, entity_type, occurred_at, event_hash]
+      properties:
+        id: { type: string, format: uuid }
+        organization_id: { type: string, format: uuid }
+        actor_user_id: { type: string, format: uuid, nullable: true }
+        event_type: { type: string }
+        entity_type: { type: string }
+        entity_id: { type: string, format: uuid, nullable: true }
+        previous_state: { type: object, nullable: true }
+        new_state: { type: object, nullable: true }
+        occurred_at: { type: string, format: date-time }
+        event_hash: { type: string }
+        previous_event_hash: { type: string, nullable: true }
+
+paths: {}

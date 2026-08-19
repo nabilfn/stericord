@@ -1,0 +1,9 @@
+# Local Supabase stack (Postgres, Auth, Storage, Realtime, Studio) is managed
+# by the Supabase CLI, not this file — run `supabase start` from the repo root.
+#
+# This compose file is reserved for auxiliary backend services introduced in
+# later phases (services/reporting in Phase 7, services/ocr and services/ai in
+# Phases 5-6). It intentionally has no services yet in Phase 1.
+version: "3.9"
+
+services: {}
