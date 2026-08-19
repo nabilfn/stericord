@@ -114,19 +114,27 @@ class _ResultOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // A manual selection indicator, not the Radio widget: this is a single
+    // free-standing choice (no RadioGroup ancestor / groupValue involved),
+    // and Radio's groupValue-based API is being superseded by RadioGroup.
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           border: Border.all(color: selected ? color : Colors.grey.shade300),
           borderRadius: BorderRadius.circular(8),
-          color: selected ? color.withOpacity(0.08) : null,
+          color: selected ? color.withValues(alpha: 0.08) : null,
         ),
         child: Row(
           children: [
-            Radio<bool>(value: true, groupValue: selected ? true : null, onChanged: (_) => onTap()),
+            Icon(
+              selected ? Icons.check_circle : Icons.circle_outlined,
+              color: selected ? color : Colors.grey.shade400,
+            ),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
