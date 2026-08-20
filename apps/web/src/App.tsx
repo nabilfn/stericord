@@ -14,6 +14,8 @@ import { PointOfUsePage } from "@/features/ot/PointOfUsePage";
 import { IncidentsListPage } from "@/features/incidents/IncidentsListPage";
 import { IncidentDetailPage } from "@/features/incidents/IncidentDetailPage";
 import { QuarantineListPage } from "@/features/quarantine/QuarantineListPage";
+import { AuditTrailPage } from "@/features/audit/AuditTrailPage";
+import { ReportsPage } from "@/features/reports/ReportsPage";
 import { UsersPage } from "@/features/users/UsersPage";
 import { SettingsPage } from "@/features/settings/SettingsPage";
 
@@ -50,6 +52,8 @@ export default function App() {
               <Route path="/incidents" element={<IncidentsListPage />} />
               <Route path="/incidents/:id" element={<IncidentDetailPage />} />
               <Route path="/quarantine" element={<QuarantineListPage />} />
+              <Route path="/audit" element={<AuditTrailPage />} />
+              <Route path="/reports" element={<ReportsPage />} />
               <Route path="/users" element={<UsersPage />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Route>

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Evidence Sheet</h1>
+<p class="subtitle">{{ evidence.evidence_type }} · Captured {{ evidence.captured_at }}</p>
+
+<h2>File Integrity</h2>
+<div class="field-grid">
+  <div><div class="field-label">SHA-256</div><div class="field-value hash">{{ evidence.sha256_hash or "not recorded" }}</div></div>
+  <div><div class="field-label">File Size</div><div class="field-value">{{ evidence.file_size or "—" }} bytes</div></div>
+  <div><div class="field-label">Quality Status</div><div class="field-value">
+    <span class="badge {{ 'badge-pass' if evidence.quality_status == 'ACCEPTED' else 'badge-neutral' }}">{{ evidence.quality_status or "not checked" }}</span>
+  </div></div>
+  <div><div class="field-label">Retention Until</div><div class="field-value">{{ evidence.retention_expires_at }}</div></div>
+</div>
+
+{% if evidence.blur_score is not none %}
+<h2>Image Quality Metrics</h2>
+<div class="field-grid">
+  <div><div class="field-label">Blur Score</div><div class="field-value">{{ evidence.blur_score | round(1) }}</div></div>
+  <div><div class="field-label">Brightness</div><div class="field-value">{{ evidence.brightness_score | round(1) }}</div></div>
+  <div><div class="field-label">Glare Ratio</div><div class="field-value">{{ (evidence.glare_ratio * 100) | round(1) }}%</div></div>
+</div>
+{% endif %}
+
+{% if ocr %}
+<h2>OCR Extraction</h2>
+<div class="field-grid">
+  <div><div class="field-label">Status</div><div class="field-value">{{ ocr.status }}</div></div>
+  <div><div class="field-label">Confirmed</div><div class="field-value">{{ "Yes, at " + ocr.confirmed_at if ocr.confirmed_at else "Not yet confirmed" }}</div></div>
+</div>
+{% if ocr.human_confirmed_fields %}
+<table>
+  <thead><tr><th>Field</th><th>Confirmed Value</th></tr></thead>
+  <tbody>
+    {% for key, value in ocr.human_confirmed_fields.items() %}
+    <tr><td>{{ key }}</td><td>{{ value if value is not none else "—" }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endif %}
+
+{% if ai %}
+<h2>AI Analysis</h2>
+<div class="field-grid">
+  <div><div class="field-label">Suggested Result</div><div class="field-value">{{ ai.suggested_result or "—" }}</div></div>
+  <div><div class="field-label">Confidence</div><div class="field-value">{{ ai.confidence_band or "—" }}{% if ai.confidence %} ({{ (ai.confidence * 100) | round | int }}%){% endif %}</div></div>
+</div>
+<p><em>Advisory only — see linked verification for the authoritative human-confirmed result.</em></p>
+{% endif %}
+{% endblock %}

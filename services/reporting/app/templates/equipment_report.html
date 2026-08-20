@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Equipment Report — {{ equipment.equipment_code }}</h1>
+<p class="subtitle">{{ equipment.equipment_type }} · {{ equipment.manufacturer or "—" }} {{ equipment.model_name or "" }}</p>
+
+<h2>Details</h2>
+<div class="field-grid">
+  <div><div class="field-label">Equipment Code</div><div class="field-value">{{ equipment.equipment_code }}</div></div>
+  <div><div class="field-label">Status</div><div class="field-value">
+    <span class="badge {{ 'badge-pass' if equipment.operating_status == 'ACTIVE' else 'badge-fail' if equipment.operating_status == 'LOCKED_OUT' else 'badge-warning' }}">{{ equipment.operating_status }}</span>
+  </div></div>
+  <div><div class="field-label">Manufacturer</div><div class="field-value">{{ equipment.manufacturer or "—" }}</div></div>
+  <div><div class="field-label">Model</div><div class="field-value">{{ equipment.model_name or "—" }}</div></div>
+  <div><div class="field-label">Serial Number</div><div class="field-value">{{ equipment.serial_number or "—" }}</div></div>
+  <div><div class="field-label">Location</div><div class="field-value">{{ equipment.location or "—" }}</div></div>
+</div>
+
+<h2>Status History ({{ status_events|length }})</h2>
+<table>
+  <thead><tr><th>Changed</th><th>Previous</th><th>New Status</th></tr></thead>
+  <tbody>
+    {% for event in status_events %}
+    <tr>
+      <td>{{ event.changed_at }}</td>
+      <td>{{ event.previous_status or "—" }}</td>
+      <td>{{ event.new_status }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="3">No status changes recorded.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h2>Cycles Run on This Equipment ({{ cycles|length }})</h2>
+<table>
+  <thead><tr><th>Cycle Number</th><th>Type</th><th>Status</th><th>Completed</th></tr></thead>
+  <tbody>
+    {% for cycle in cycles %}
+    <tr>
+      <td>{{ cycle.cycle_number }}</td>
+      <td>{{ cycle.cycle_type }}</td>
+      <td>{{ cycle.cycle_status }}</td>
+      <td>{{ cycle.completed_at or "—" }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4">No cycles recorded for this equipment.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,9 +1,18 @@
 # Local Supabase stack (Postgres, Auth, Storage, Realtime, Studio) is managed
 # by the Supabase CLI, not this file — run `supabase start` from the repo root.
 #
-# This compose file is reserved for auxiliary backend services introduced in
-# later phases (services/reporting in Phase 7, services/ocr and services/ai in
-# Phases 5-6). It intentionally has no services yet in Phase 1.
-version: "3.9"
-
-services: {}
+# services/ocr and services/ai (Phases 5-6) ended up as Supabase Edge
+# Functions instead of standalone services (see docs/architecture/phase-5-ocr.md)
+# -- Deno's npm compatibility plus Web Crypto covered everything they needed
+# without a second deployable unit. services/reporting (Phase 7) genuinely
+# needs to be separate: WeasyPrint requires native Pango/Cairo libraries no
+# serverless/edge runtime provides, so it runs here as a real container.
+services:
+  reporting:
+    build: ./services/reporting
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./services/reporting/.env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

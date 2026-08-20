@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Incident Report</h1>
+<p class="subtitle">{{ incident.source_type }} · Detected {{ incident.detected_at }}</p>
+
+<h2>Summary</h2>
+<div class="field-grid">
+  <div><div class="field-label">Status</div><div class="field-value">
+    <span class="badge {{ 'badge-pass' if incident.status in ('RESOLVED',) else 'badge-neutral' if incident.status == 'CLOSED' else 'badge-fail' }}">{{ incident.status }}</span>
+  </div></div>
+  <div><div class="field-label">Priority</div><div class="field-value">{{ incident.priority }}</div></div>
+  <div><div class="field-label">Related Entity</div><div class="field-value">{{ incident.related_entity_type }}</div></div>
+  <div><div class="field-label">Detected</div><div class="field-value">{{ incident.detected_at }}</div></div>
+</div>
+
+<h2>Description</h2>
+<p>{{ incident.description or "—" }}</p>
+
+{% if incident.resolution_notes %}
+<h2>Resolution</h2>
+<p>{{ incident.resolution_notes }}</p>
+<div class="field-grid">
+  <div><div class="field-label">Resolved At</div><div class="field-value">{{ incident.resolved_at or "—" }}</div></div>
+</div>
+{% endif %}
+
+<h2>Linked Quarantine{{ "s" if quarantines|length != 1 else "" }} ({{ quarantines|length }})</h2>
+<table>
+  <thead><tr><th>Scope</th><th>Reason</th><th>Status</th><th>Initiated</th><th>Released</th></tr></thead>
+  <tbody>
+    {% for q in quarantines %}
+    <tr>
+      <td>{{ q.scope_type }}</td>
+      <td>{{ q.reason }}</td>
+      <td>{{ q.status }}</td>
+      <td>{{ q.initiated_at }}</td>
+      <td>{{ q.released_at or "—" }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5">No quarantine linked to this incident.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

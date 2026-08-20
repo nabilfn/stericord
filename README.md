@@ -4,16 +4,16 @@ Hospital sterilization traceability and assurance platform. See
 [SteriCord_Updated_Master_Development_Prompt.md](./SteriCord_Updated_Master_Development_Prompt.md)
 for the full product/phase specification driving this build.
 
-**Status: Phase 6 — Multimodal AI (Gemini) complete.** Authentication,
+**Status: Phase 7 — Compliance & Reporting complete.** Authentication,
 multi-tenancy, RLS, equipment registry (Phase 1); sterilization cycles,
 packs, QR, evidence, verification, release (Phase 2); OT/ward point-of-use
 scanning, incidents, quarantine, realtime alerts (Phase 3); client-side
-blur/exposure/glare checks (Phase 4); Document AI OCR with mandatory human
-confirmation (Phase 5); and Gemini-based indicator classification with
-enforced confidence routing (Phase 6) are functional. Phases 1-4 and the
-OCR/AI pipelines' plumbing are verified against a local Supabase stack; the
-actual Google Document AI and Gemini API calls are untested since this
-environment has no real GCP/Gemini credentials — see
+blur/exposure/glare checks (Phase 4); Document AI OCR (Phase 5);
+Gemini-based indicator classification (Phase 6); and a hash-chain-verified
+audit trail with a real WeasyPrint reporting service (Phase 7) are
+functional. Phases 1-4 and 7 are fully verified against a local Supabase
+stack; the actual Google Document AI and Gemini API calls are untested
+since this environment has no real GCP/Gemini credentials — see
 `docs/architecture/phase-5-ocr.md` and `phase-6-multimodal-ai.md` for
 exactly what was and wasn't verified.
 
@@ -22,8 +22,8 @@ exactly what was and wasn't verified.
 ```text
 apps/mobile/    Flutter app (CSSD/OT staff)
 apps/web/       React + TypeScript dashboard (admin/supervisor)
-supabase/       Postgres schema, RLS policies, local dev config
-services/       Backend services added in later phases (ai, ocr, reporting, notifications)
+supabase/       Postgres schema, RLS policies, local dev config, Edge Functions (ocr-extract, gemini-analyze)
+services/reporting/  Python/FastAPI/WeasyPrint PDF reporting service (Docker)
 packages/contracts/  OpenAPI contract shared by both frontends
 docs/           Architecture, database, API, workflow, validation notes
 ```
@@ -116,6 +116,15 @@ auto-submitting — the matching result; a LOW-confidence read is always
 forced to `UNDETERMINED` server-side before it's ever stored, regardless
 of what the model actually said.
 
+To see the audit trail, go to Audit Trail and click "Verify Chain
+Integrity" — it recomputes every event's hash from its own stored content
+and reports "Chain intact" (or exactly which row was tampered with, if
+any). To try reporting, run `docker compose up --build reporting` (needs
+`services/reporting/.env` — copy from `.env.example` and fill in your
+local `SUPABASE_ANON_KEY` from `supabase status`), then go to Reports and
+download a real PDF for any equipment/cycle/incident, or click the
+download icon next to any evidence file for its evidence sheet.
+
 ### 3. Run the mobile app
 
 Requires the Flutter SDK, which is not installed in this environment. Once
@@ -145,8 +154,9 @@ rollback;
 
 ## Roadmap
 
-Phases 1-6 (Foundation, CSSD Core, OT Point-of-Use Safety, Image Quality,
-OCR / Document AI, Multimodal AI) are done — every mandatory AI phase is
-now in place. Next: Phase 7 — Compliance & Reporting (audit trail views,
-compliance reports, retention rules, exports). See the master prompt for
-the full phase list.
+Phases 1-7 (Foundation, CSSD Core, OT Point-of-Use Safety, Image Quality,
+OCR / Document AI, Multimodal AI, Compliance & Reporting) are done. Next:
+Phase 8 — Offline, Security & Pilot Hardening (offline capture queue, MFA,
+security/device/performance testing, pilot deployment config) — the final
+phase before hospital pilot readiness. See the master prompt for the full
+phase list.

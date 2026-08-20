@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Sterilization Cycle Report — {{ cycle.cycle_number }}</h1>
+<p class="subtitle">{{ cycle.cycle_type }} · {{ equipment.equipment_code if equipment else "—" }}</p>
+
+<h2>Cycle Parameters</h2>
+<div class="field-grid">
+  <div><div class="field-label">Status</div><div class="field-value">
+    <span class="badge {{ 'badge-pass' if cycle.cycle_status == 'PASSED' else 'badge-fail' if cycle.cycle_status in ('FAILED','QUARANTINED') else 'badge-neutral' }}">{{ cycle.cycle_status }}</span>
+  </div></div>
+  <div><div class="field-label">Equipment</div><div class="field-value">{{ equipment.equipment_code if equipment else "—" }}</div></div>
+  <div><div class="field-label">Temperature</div><div class="field-value">{{ cycle.temperature or "—" }} °C</div></div>
+  <div><div class="field-label">Pressure</div><div class="field-value">{{ cycle.pressure or "—" }} bar</div></div>
+  <div><div class="field-label">Hold Time</div><div class="field-value">{{ cycle.hold_time_seconds or "—" }} s</div></div>
+  <div><div class="field-label">Started / Completed</div><div class="field-value">{{ cycle.started_at or "—" }} / {{ cycle.completed_at or "—" }}</div></div>
+</div>
+
+<h2>Instrument Packs ({{ packs|length }})</h2>
+<table>
+  <thead><tr><th>Pack Code</th><th>Status</th><th>Expiry</th></tr></thead>
+  <tbody>
+    {% for pack in packs %}
+    <tr>
+      <td>{{ pack.pack_code }}</td>
+      <td>{{ pack.status }}</td>
+      <td>{{ pack.expiry_date or "—" }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="3">No packs registered in this cycle.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h2>Evidence ({{ evidence|length }})</h2>
+<table>
+  <thead><tr><th>Type</th><th>Captured</th><th>Quality</th><th>SHA-256</th></tr></thead>
+  <tbody>
+    {% for file in evidence %}
+    <tr>
+      <td>{{ file.evidence_type }}</td>
+      <td>{{ file.captured_at }}</td>
+      <td>{{ file.quality_status or "not checked" }}</td>
+      <td class="hash">{{ file.sha256_hash or "—" }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4">No evidence captured.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h2>Verification History ({{ verifications|length }})</h2>
+<table>
+  <thead><tr><th>Result</th><th>AI Suggested</th><th>Verified At</th><th>Notes</th></tr></thead>
+  <tbody>
+    {% for v in verifications %}
+    <tr>
+      <td><span class="badge {{ 'badge-pass' if v.human_result == 'PASS' else 'badge-fail' if v.human_result == 'FAIL' else 'badge-warning' }}">{{ v.human_result }}</span></td>
+      <td>{{ v.ai_suggested_result or "—" }}{% if v.ai_confidence %} ({{ (v.ai_confidence * 100) | round | int }}%){% endif %}</td>
+      <td>{{ v.verified_at }}</td>
+      <td>{{ v.notes or "—" }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4">No verification recorded.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h2>Audit Trail ({{ audit_events|length }})</h2>
+<table>
+  <thead><tr><th>Event</th><th>When</th><th>Hash</th></tr></thead>
+  <tbody>
+    {% for e in audit_events %}
+    <tr>
+      <td>{{ e.event_type }}</td>
+      <td>{{ e.occurred_at }}</td>
+      <td class="hash">{{ e.event_hash[:16] }}…</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="3">No audit events found.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

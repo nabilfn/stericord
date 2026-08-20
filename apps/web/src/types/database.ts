@@ -185,6 +185,7 @@ export interface EvidenceFile {
   blur_score: number | null;
   brightness_score: number | null;
   glare_ratio: number | null;
+  retention_expires_at: string;
 }
 
 export interface Verification {
@@ -228,6 +229,14 @@ export interface AuditEvent {
   metadata: Record<string, unknown> | null;
   event_hash: string;
   previous_event_hash: string | null;
+  retention_expires_at: string;
+}
+
+export interface AuditChainIssue {
+  out_event_id: string;
+  out_occurred_at: string;
+  out_event_type: string;
+  out_issue: string;
 }
 
 export interface PointOfUseRecord {

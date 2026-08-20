@@ -1,5 +1,16 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Wrench, Layers, ScanLine, AlertTriangle, ShieldAlert, Users, Settings } from "lucide-react";
+import {
+  LayoutDashboard,
+  Wrench,
+  Layers,
+  ScanLine,
+  AlertTriangle,
+  ShieldAlert,
+  ScrollText,
+  FileOutput,
+  Users,
+  Settings,
+} from "lucide-react";
 import { cn } from "@/utils/cn";
 
 const navItems = [
@@ -9,6 +20,8 @@ const navItems = [
   { to: "/incidents", label: "Incidents", icon: AlertTriangle },
   { to: "/quarantine", label: "Quarantine", icon: ShieldAlert },
   { to: "/equipment", label: "Equipment", icon: Wrench },
+  { to: "/audit", label: "Audit Trail", icon: ScrollText },
+  { to: "/reports", label: "Reports", icon: FileOutput },
   { to: "/users", label: "Users", icon: Users },
   { to: "/settings", label: "Settings", icon: Settings },
 ];

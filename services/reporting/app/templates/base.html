@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>{{ title }}</title>
+<style>
+  @page {
+    size: A4;
+    margin: 2cm 1.5cm;
+    @bottom-right {
+      content: "Page " counter(page) " of " counter(pages);
+      font-size: 8pt;
+      color: #64748b;
+    }
+    @bottom-left {
+      content: "Generated {{ generated_at }} by {{ generated_by }}";
+      font-size: 8pt;
+      color: #64748b;
+    }
+  }
+  body {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    color: #0f172a;
+    font-size: 10.5pt;
+    line-height: 1.5;
+  }
+  header.report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 3px solid #0B1F3A;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+  }
+  header.report-header .brand {
+    font-size: 16pt;
+    font-weight: bold;
+    color: #0B1F3A;
+  }
+  header.report-header .org {
+    font-size: 10pt;
+    color: #475569;
+    text-align: right;
+  }
+  h1 {
+    font-size: 15pt;
+    color: #0B1F3A;
+    margin-bottom: 2px;
+  }
+  .subtitle {
+    color: #64748b;
+    font-size: 9.5pt;
+    margin-bottom: 18px;
+  }
+  h2 {
+    font-size: 11.5pt;
+    color: #0F766E;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 4px;
+    margin-top: 22px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+    margin-bottom: 8px;
+  }
+  th {
+    text-align: left;
+    font-size: 8.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #64748b;
+    padding: 4px 8px;
+    border-bottom: 1px solid #cbd5e1;
+  }
+  td {
+    padding: 5px 8px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 9.5pt;
+  }
+  .field-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 24px;
+    margin: 8px 0;
+  }
+  .field-label {
+    font-size: 8pt;
+    text-transform: uppercase;
+    color: #94a3b8;
+  }
+  .field-value {
+    font-size: 10pt;
+  }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 8.5pt;
+    font-weight: 600;
+  }
+  .badge-pass { background: #dcfce7; color: #166534; }
+  .badge-fail { background: #fee2e2; color: #991b1b; }
+  .badge-warning { background: #fef3c7; color: #92400e; }
+  .badge-neutral { background: #f1f5f9; color: #334155; }
+  .hash {
+    font-family: "Courier New", monospace;
+    font-size: 8pt;
+    color: #475569;
+    word-break: break-all;
+  }
+  .footnote {
+    margin-top: 24px;
+    padding-top: 10px;
+    border-top: 1px solid #e2e8f0;
+    font-size: 8pt;
+    color: #94a3b8;
+  }
+</style>
+</head>
+<body>
+  <header class="report-header">
+    <div class="brand">SteriCord</div>
+    <div class="org">{{ organization_name }}</div>
+  </header>
+  {% block content %}{% endblock %}
+  <div class="footnote">
+    This report reflects the state of SteriCord records at the time of generation. AI-assisted suggestions
+    (where present) are advisory only; human_result is the sole authoritative outcome recorded in the system.
+  </div>
+</body>
+</html>
