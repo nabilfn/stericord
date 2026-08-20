@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' hide AuthException;
 import 'package:stericord_mobile/core/constants/roles.dart';
 import 'package:stericord_mobile/features/auth/auth_repository.dart';
 import 'package:stericord_mobile/features/auth/profile_model.dart';

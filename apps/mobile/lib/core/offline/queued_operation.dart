@@ -30,6 +30,7 @@ class QueuedOperation {
     SyncState? syncState,
     int? retryCount,
     String? lastError,
+    DateTime? lastAttemptedAt,
   }) {
     return QueuedOperation(
       id: id,
@@ -39,6 +40,7 @@ class QueuedOperation {
       retryCount: retryCount ?? this.retryCount,
       lastError: lastError,
       createdAt: createdAt,
+      lastAttemptedAt: lastAttemptedAt ?? this.lastAttemptedAt,
     );
   }
 }

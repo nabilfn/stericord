@@ -1,6 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
-import 'package:stericord_mobile/core/constants/roles.dart';
 import 'package:stericord_mobile/core/network/supabase_client_provider.dart';
 import 'package:stericord_mobile/core/offline/offline_queue_repository.dart';
 import 'package:stericord_mobile/features/cycles/cycle_model.dart';
