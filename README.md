@@ -4,18 +4,25 @@ Hospital sterilization traceability and assurance platform. See
 [SteriCord_Updated_Master_Development_Prompt.md](./SteriCord_Updated_Master_Development_Prompt.md)
 for the full product/phase specification driving this build.
 
-**Status: Phase 7 — Compliance & Reporting complete.** Authentication,
+**Status: Phase 8 — Offline, Security & Pilot Hardening complete (all 8
+phases of the master prompt roadmap done).** Authentication,
 multi-tenancy, RLS, equipment registry (Phase 1); sterilization cycles,
 packs, QR, evidence, verification, release (Phase 2); OT/ward point-of-use
 scanning, incidents, quarantine, realtime alerts (Phase 3); client-side
 blur/exposure/glare checks (Phase 4); Document AI OCR (Phase 5);
-Gemini-based indicator classification (Phase 6); and a hash-chain-verified
-audit trail with a real WeasyPrint reporting service (Phase 7) are
-functional. Phases 1-4 and 7 are fully verified against a local Supabase
-stack; the actual Google Document AI and Gemini API calls are untested
-since this environment has no real GCP/Gemini credentials — see
-`docs/architecture/phase-5-ocr.md` and `phase-6-multimodal-ai.md` for
-exactly what was and wasn't verified.
+Gemini-based indicator classification (Phase 6); a hash-chain-verified
+audit trail with a real WeasyPrint reporting service (Phase 7); and MFA,
+per-user rate limiting, tested backup/restore, an AI-accuracy validation
+view, offline-sync idempotency, and an automated security test suite
+(Phase 8) are functional. Phases 1-4, 7, and 8's server/web pieces are
+fully verified against a local Supabase stack; the actual Google Document
+AI and Gemini API calls are untested since this environment has no real
+GCP/Gemini credentials, and the mobile app's offline queue is written but
+uncompiled since this environment has no Flutter SDK — see
+`docs/architecture/phase-5-ocr.md`, `phase-6-multimodal-ai.md`, and
+`phase-8-offline-security-pilot.md` for exactly what was and wasn't
+verified, and `infrastructure/deployment/pilot-checklist.md` for what's
+left before a real hospital pilot.
 
 ## Monorepo layout
 
@@ -154,9 +161,18 @@ rollback;
 
 ## Roadmap
 
-Phases 1-7 (Foundation, CSSD Core, OT Point-of-Use Safety, Image Quality,
-OCR / Document AI, Multimodal AI, Compliance & Reporting) are done. Next:
-Phase 8 — Offline, Security & Pilot Hardening (offline capture queue, MFA,
-security/device/performance testing, pilot deployment config) — the final
-phase before hospital pilot readiness. See the master prompt for the full
-phase list.
+All 8 phases of the master prompt roadmap (Foundation, CSSD Core, OT
+Point-of-Use Safety, Image Quality, OCR / Document AI, Multimodal AI,
+Compliance & Reporting, Offline/Security/Pilot Hardening) are done. What's
+left before an actual hospital pilot is not another phase but the
+verification this sandboxed environment couldn't do — see
+`infrastructure/deployment/pilot-checklist.md`.
+
+To try MFA, sign in and go to Settings → "Enable two-factor
+authentication" — scan the QR code with any TOTP authenticator app, enter
+the 6-digit code, then sign out and back in to see the challenge gate.
+
+To run the automated security test suite:
+`infrastructure/deployment/security-checks.sh` (requires `supabase
+start`). To back up and restore the local database:
+`infrastructure/deployment/backup-db.sh` and `restore-db.sh`.

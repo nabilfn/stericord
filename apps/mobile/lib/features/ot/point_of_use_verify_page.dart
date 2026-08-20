@@ -32,6 +32,7 @@ class _PointOfUseVerifyPageState extends State<PointOfUseVerifyPage> {
   bool _submitting = false;
   String? _error;
   String? _outcome;
+  bool _queuedOffline = false;
   AiAnalysis? _aiSuggestion;
 
   @override
@@ -87,7 +88,7 @@ class _PointOfUseVerifyPageState extends State<PointOfUseVerifyPage> {
       _error = null;
     });
     try {
-      await _pouRepository.recordVerification(
+      final outcome = await _pouRepository.recordVerification(
         packId: widget.packId,
         result: _result!,
         patientReference: _patientRefController.text.trim().isEmpty ? null : _patientRefController.text.trim(),
@@ -96,7 +97,10 @@ class _PointOfUseVerifyPageState extends State<PointOfUseVerifyPage> {
         notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
         aiAnalysisId: _aiSuggestion?.id,
       );
-      setState(() => _outcome = _result!.dbValue);
+      setState(() {
+        _outcome = _result!.dbValue;
+        _queuedOffline = outcome == RecordVerificationOutcome.queuedOffline;
+      });
     } catch (e) {
       setState(() => _error = e.toString());
     } finally {
@@ -141,6 +145,21 @@ class _PointOfUseVerifyPageState extends State<PointOfUseVerifyPage> {
             ),
             const SizedBox(height: 16),
             Text(message, textAlign: TextAlign.center, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: color)),
+            if (_queuedOffline) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  'No connection — saved on this device and will sync automatically once online.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                ),
+              ),
+            ],
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () => Navigator.of(context).pop(),

@@ -1,13 +1,19 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { ShieldCheck, ShieldAlert } from "lucide-react";
+import { ShieldCheck, ShieldAlert, BrainCircuit } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { Input, Label } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { useAuth } from "@/contexts/AuthContext";
-import { listAuditEvents, listDistinctEntityTypes, verifyAuditChain, type AuditEventFilters } from "@/features/audit/api";
+import {
+  fetchAiValidationSummary,
+  listAuditEvents,
+  listDistinctEntityTypes,
+  verifyAuditChain,
+  type AuditEventFilters,
+} from "@/features/audit/api";
 
 export function AuditTrailPage() {
   const { profile } = useAuth();
@@ -22,6 +28,8 @@ export function AuditTrailPage() {
   const chainMutation = useMutation({
     mutationFn: () => verifyAuditChain(profile!.organization_id),
   });
+
+  const aiValidationQuery = useQuery({ queryKey: ["ai-validation-summary"], queryFn: fetchAiValidationSummary });
 
   return (
     <div className="space-y-6">
@@ -105,6 +113,61 @@ export function AuditTrailPage() {
             <Button variant="ghost" onClick={() => setFilters({})}>
               Clear filters
             </Button>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center gap-2">
+          <BrainCircuit size={16} />
+          <div>
+            <CardTitle>AI validation</CardTitle>
+            <p className="text-xs text-slate-500">
+              How often AI-assisted suggestions agreed with the human-verified result. Advisory only — never used to
+              gate or auto-approve anything.
+            </p>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {aiValidationQuery.isLoading && <p className="text-sm text-slate-500">Loading…</p>}
+          {aiValidationQuery.data && aiValidationQuery.data.length === 0 && (
+            <p className="text-sm text-slate-500">No AI-assisted verifications recorded yet.</p>
+          )}
+          {aiValidationQuery.data && aiValidationQuery.data.length > 0 && (
+            <table className="min-w-full divide-y divide-slate-100 text-sm">
+              <thead>
+                <tr className="text-left text-xs font-medium uppercase tracking-wide text-slate-500">
+                  <th className="py-2 pr-4">Verification type</th>
+                  <th className="py-2 pr-4">Total</th>
+                  <th className="py-2 pr-4">Agreement rate</th>
+                  <th className="py-2 pr-4">False PASS</th>
+                  <th className="py-2 pr-4">False FAIL</th>
+                  <th className="py-2 pr-4">Abstained</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {aiValidationQuery.data.map((row) => (
+                  <tr key={row.verification_type}>
+                    <td className="py-2 pr-4 font-medium text-slate-900">{row.verification_type.replace(/_/g, " ")}</td>
+                    <td className="py-2 pr-4">{row.total_ai_assisted}</td>
+                    <td className="py-2 pr-4">
+                      {row.agreement_rate_excl_abstentions != null
+                        ? `${Math.round(row.agreement_rate_excl_abstentions * 100)}%`
+                        : "—"}
+                    </td>
+                    <td className="py-2 pr-4">
+                      {row.false_pass_count > 0 ? (
+                        <Badge tone="fail">{row.false_pass_count}</Badge>
+                      ) : (
+                        row.false_pass_count
+                      )}
+                    </td>
+                    <td className="py-2 pr-4">{row.false_fail_count}</td>
+                    <td className="py-2 pr-4">{row.abstained_count}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           )}
         </CardContent>
       </Card>

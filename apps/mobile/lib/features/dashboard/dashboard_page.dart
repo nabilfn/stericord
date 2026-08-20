@@ -9,6 +9,7 @@ import 'package:stericord_mobile/features/equipment/equipment_list_page.dart';
 import 'package:stericord_mobile/features/incidents/incidents_list_page.dart';
 import 'package:stericord_mobile/features/notifications/notifications_page.dart';
 import 'package:stericord_mobile/features/ot/qr_scan_page.dart';
+import 'package:stericord_mobile/core/offline/sync_status_badge.dart';
 
 class _Destination {
   final String label;
@@ -74,6 +75,7 @@ class _DashboardHome extends StatelessWidget {
       appBar: AppBar(
         title: const Text('SteriCord'),
         actions: [
+          const SyncStatusBadge(),
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
             onPressed: () => Navigator.of(context).push(

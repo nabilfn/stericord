@@ -1,7 +1,13 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/services/supabaseClient";
-import { fetchActiveRoles, fetchCurrentProfile, signInWithPassword, signOut as signOutRequest } from "@/features/auth/api";
+import {
+  fetchActiveRoles,
+  fetchCurrentProfile,
+  getAuthenticatorAssuranceLevel,
+  signInWithPassword,
+  signOut as signOutRequest,
+} from "@/features/auth/api";
 import type { Profile, UserRole } from "@/types/database";
 
 interface AuthContextValue {
@@ -10,9 +16,12 @@ interface AuthContextValue {
   profile: Profile | null;
   roles: UserRole[];
   loading: boolean;
+  /** True once signed in but a verified MFA factor still needs a fresh challenge this session. */
+  mfaChallengePending: boolean;
   hasRole: (...allowed: UserRole[]) => boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  refreshMfaStatus: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -22,12 +31,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [roles, setRoles] = useState<UserRole[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mfaChallengePending, setMfaChallengePending] = useState(false);
 
   async function loadProfileAndRoles(userId: string) {
     const nextProfile = await fetchCurrentProfile(userId);
     setProfile(nextProfile);
     const grants = await fetchActiveRoles(userId, nextProfile.organization_id);
     setRoles(grants.map((g) => g.role));
+  }
+
+  async function refreshMfaStatus() {
+    const aal = await getAuthenticatorAssuranceLevel();
+    setMfaChallengePending(aal.nextLevel === "aal2" && aal.currentLevel !== aal.nextLevel);
   }
 
   useEffect(() => {
@@ -38,6 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(data.session);
       if (data.session?.user) {
         await loadProfileAndRoles(data.session.user.id);
+        await refreshMfaStatus();
       }
       setLoading(false);
     });
@@ -47,10 +63,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (nextSession?.user) {
         setLoading(true);
         await loadProfileAndRoles(nextSession.user.id);
+        await refreshMfaStatus();
         setLoading(false);
       } else {
         setProfile(null);
         setRoles([]);
+        setMfaChallengePending(false);
       }
     });
 
@@ -78,9 +96,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     profile,
     roles,
     loading,
+    mfaChallengePending,
     hasRole,
     signIn,
     signOut,
+    refreshMfaStatus,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

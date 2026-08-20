@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { MfaChallengePage } from "@/features/auth/MfaChallengePage";
 
 export function ProtectedRoute({ children }: { children: ReactNode }) {
-  const { session, loading } = useAuth();
+  const { session, loading, mfaChallengePending } = useAuth();
 
   if (loading) {
     return (
@@ -15,6 +16,10 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
 
   if (!session) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (mfaChallengePending) {
+    return <MfaChallengePage />;
   }
 
   return <>{children}</>;

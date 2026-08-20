@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useAuth } from "@/contexts/AuthContext";
+import { MfaSettings } from "@/features/auth/MfaSettings";
 
 export function SettingsPage() {
   const { profile, roles } = useAuth();
@@ -31,12 +32,14 @@ export function SettingsPage() {
         </CardContent>
       </Card>
 
+      <MfaSettings />
+
       <Card>
         <CardHeader>
           <CardTitle>About SteriCord</CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-slate-500">
-          Phase 1 — Foundation. Sterilization cycles, packs, and OT verification arrive in Phase 2 and Phase 3.
+          Phase 8 — Offline, Security & Pilot Hardening.
         </CardContent>
       </Card>
     </div>

@@ -28,3 +28,32 @@ export async function fetchActiveRoles(userId: string, organizationId: string): 
   if (error) throw error;
   return (data ?? []) as UserRoleGrant[];
 }
+
+export async function getAuthenticatorAssuranceLevel() {
+  const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (error) throw error;
+  return data;
+}
+
+export async function listMfaFactors() {
+  const { data, error } = await supabase.auth.mfa.listFactors();
+  if (error) throw error;
+  return data.totp;
+}
+
+export async function enrollMfaFactor() {
+  const { data, error } = await supabase.auth.mfa.enroll({ factorType: "totp" });
+  if (error) throw error;
+  return data;
+}
+
+export async function challengeAndVerifyMfaFactor(factorId: string, code: string) {
+  const { data, error } = await supabase.auth.mfa.challengeAndVerify({ factorId, code });
+  if (error) throw error;
+  return data;
+}
+
+export async function unenrollMfaFactor(factorId: string) {
+  const { error } = await supabase.auth.mfa.unenroll({ factorId });
+  if (error) throw error;
+}

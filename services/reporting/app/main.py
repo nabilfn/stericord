@@ -6,7 +6,11 @@ data read under the calling user's own Supabase session -- see
 supabase_client.py for why that's the entire authorization model here.
 """
 
+import base64
+import json
 import os
+import time
+from collections import defaultdict, deque
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -36,6 +40,40 @@ def get_token(authorization: str | None = Header(default=None)) -> str:
     if not authorization or not authorization.lower().startswith("bearer "):
         raise HTTPException(status_code=401, detail="Missing bearer token")
     return authorization.split(" ", 1)[1]
+
+
+# Rate limiting: report generation renders full PDFs via WeasyPrint, which is CPU-heavy,
+# so it's the one endpoint class here worth throttling per user (section 43: "Rate limiting
+# where appropriate"). Keyed by the JWT `sub` claim -- not signature-verified here, only used
+# to bucket requests, since PostgREST re-verifies the token on every actual data call anyway,
+# so a forged `sub` can at most confuse a rate-limit bucket, never bypass authorization.
+# In-memory and per-process: correct for this single-instance service; a horizontally scaled
+# deployment would need a shared store (e.g. Redis) instead.
+RATE_LIMIT_MAX_REQUESTS = 30
+RATE_LIMIT_WINDOW_SECONDS = 60
+_request_log: dict[str, deque] = defaultdict(deque)
+
+
+def _subject_from_token(token: str) -> str:
+    try:
+        payload_b64 = token.split(".")[1]
+        padded = payload_b64 + "=" * (-len(payload_b64) % 4)
+        payload = json.loads(base64.urlsafe_b64decode(padded))
+        return payload.get("sub", "unknown")
+    except Exception:
+        return "unknown"
+
+
+def enforce_rate_limit(token: str) -> None:
+    subject = _subject_from_token(token)
+    now = time.monotonic()
+    window_start = now - RATE_LIMIT_WINDOW_SECONDS
+    log = _request_log[subject]
+    while log and log[0] < window_start:
+        log.popleft()
+    if len(log) >= RATE_LIMIT_MAX_REQUESTS:
+        raise HTTPException(status_code=429, detail="Too many report requests, slow down")
+    log.append(now)
 
 
 def render_pdf(template_name: str, **context) -> bytes:
@@ -77,6 +115,7 @@ async def health():
 @app.get("/reports/equipment/{equipment_id}")
 async def equipment_report(equipment_id: str, authorization: str | None = Header(default=None)):
     token = get_token(authorization)
+    enforce_rate_limit(token)
     client = SupabaseClient(token)
     user = await client.whoami()
 
@@ -105,6 +144,7 @@ async def equipment_report(equipment_id: str, authorization: str | None = Header
 @app.get("/reports/cycle/{cycle_id}")
 async def cycle_report(cycle_id: str, authorization: str | None = Header(default=None)):
     token = get_token(authorization)
+    enforce_rate_limit(token)
     client = SupabaseClient(token)
     user = await client.whoami()
 
@@ -150,6 +190,7 @@ async def cycle_report(cycle_id: str, authorization: str | None = Header(default
 @app.get("/reports/incident/{incident_id}")
 async def incident_report(incident_id: str, authorization: str | None = Header(default=None)):
     token = get_token(authorization)
+    enforce_rate_limit(token)
     client = SupabaseClient(token)
     user = await client.whoami()
 
@@ -172,6 +213,7 @@ async def incident_report(incident_id: str, authorization: str | None = Header(d
 @app.get("/reports/evidence/{evidence_file_id}")
 async def evidence_sheet(evidence_file_id: str, authorization: str | None = Header(default=None)):
     token = get_token(authorization)
+    enforce_rate_limit(token)
     client = SupabaseClient(token)
     user = await client.whoami()
 
