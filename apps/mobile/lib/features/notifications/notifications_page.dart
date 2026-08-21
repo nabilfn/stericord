@@ -52,7 +52,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   void _refresh() {
     if (!mounted) return;
-    setState(() => _future = _repository.listNotifications());
+    setState(() {
+      _future = _repository.listNotifications();
+    });
   }
 
   Future<void> _markRead(AppNotification n) async {

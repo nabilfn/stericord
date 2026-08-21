@@ -24,12 +24,21 @@ class _IncidentDetailPageState extends State<IncidentDetailPage> {
   @override
   void initState() {
     super.initState();
-    _future = _repository.getIncident(widget.incidentId);
+    _future = _loadIncident();
+  }
+
+  Future<Incident> _loadIncident() async {
+    try {
+      return await _repository.getIncident(widget.incidentId);
+    } catch (e, st) {
+      debugPrint('Load incident error for ${widget.incidentId}: $e\n$st');
+      rethrow;
+    }
   }
 
   Future<void> _refresh() async {
     setState(() {
-      _future = _repository.getIncident(widget.incidentId);
+      _future = _loadIncident();
       _error = null;
     });
   }

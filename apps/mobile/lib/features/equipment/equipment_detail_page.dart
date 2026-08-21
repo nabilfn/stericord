@@ -27,9 +27,18 @@ class _EquipmentDetailPageState extends State<EquipmentDetailPage> {
   @override
   void initState() {
     super.initState();
-    _equipmentFuture = _equipmentRepository.getEquipment(widget.equipmentId);
+    _equipmentFuture = _loadEquipment();
     _historyFuture = _equipmentRepository.getStatusHistory(widget.equipmentId);
     _cyclesFuture = _cycleRepository.listCyclesByEquipment(widget.equipmentId);
+  }
+
+  Future<Equipment> _loadEquipment() async {
+    try {
+      return await _equipmentRepository.getEquipment(widget.equipmentId);
+    } catch (e, st) {
+      debugPrint('Load equipment error for ${widget.equipmentId}: $e\n$st');
+      rethrow;
+    }
   }
 
   @override
@@ -46,7 +55,7 @@ class _EquipmentDetailPageState extends State<EquipmentDetailPage> {
             return SteriErrorState(
               title: 'Unable to load equipment',
               onRetry: () => setState(() {
-                _equipmentFuture = _equipmentRepository.getEquipment(widget.equipmentId);
+                _equipmentFuture = _loadEquipment();
               }),
             );
           }

@@ -45,7 +45,9 @@ class _EvidenceCaptureWidgetState extends State<EvidenceCaptureWidget> {
   }
 
   Future<void> _refresh() async {
-    setState(() => _future = _repository.listEvidence(widget.entityType, widget.entityId));
+    setState(() {
+      _future = _repository.listEvidence(widget.entityType, widget.entityId);
+    });
   }
 
   Future<void> _capture() async {

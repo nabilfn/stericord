@@ -25,7 +25,9 @@ class _CyclesListPageState extends State<CyclesListPage> {
   }
 
   Future<void> _refresh() async {
-    setState(() => _future = _repository.listCycles());
+    setState(() {
+      _future = _repository.listCycles();
+    });
     await _future;
   }
 

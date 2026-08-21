@@ -40,9 +40,16 @@ class _CycleDetailPageState extends State<CycleDetailPage> {
   }
 
   Future<SterilizationCycle> _loadCycle() async {
-    final cycle = await _cycleRepository.getCycle(widget.cycleId);
-    setState(() => _equipmentFuture = _equipmentRepository.getEquipment(cycle.equipmentId));
-    return cycle;
+    try {
+      final cycle = await _cycleRepository.getCycle(widget.cycleId);
+      setState(() {
+        _equipmentFuture = _equipmentRepository.getEquipment(cycle.equipmentId);
+      });
+      return cycle;
+    } catch (e, st) {
+      debugPrint('Load cycle error for ${widget.cycleId}: $e\n$st');
+      rethrow;
+    }
   }
 
   Future<void> _refresh() async {

@@ -31,7 +31,9 @@ class PackListForCycleState extends State<PackListForCycle> {
   }
 
   void refresh() {
-    setState(() => _future = _repository.listPacksByCycle(widget.cycleId));
+    setState(() {
+      _future = _repository.listPacksByCycle(widget.cycleId);
+    });
   }
 
   Future<void> _release(String packId) async {

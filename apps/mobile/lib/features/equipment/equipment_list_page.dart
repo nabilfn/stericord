@@ -24,7 +24,9 @@ class _EquipmentListPageState extends State<EquipmentListPage> {
   }
 
   Future<void> _refresh() async {
-    setState(() => _future = _repository.listEquipment());
+    setState(() {
+      _future = _repository.listEquipment();
+    });
     await _future;
   }
 

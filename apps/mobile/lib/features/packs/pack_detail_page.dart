@@ -34,9 +34,16 @@ class _PackDetailPageState extends State<PackDetailPage> {
   }
 
   Future<InstrumentPack> _loadPack() async {
-    final pack = await _packRepository.getPack(widget.packId);
-    setState(() => _cycleFuture = _cycleRepository.getCycle(pack.sterilizationCycleId));
-    return pack;
+    try {
+      final pack = await _packRepository.getPack(widget.packId);
+      setState(() {
+        _cycleFuture = _cycleRepository.getCycle(pack.sterilizationCycleId);
+      });
+      return pack;
+    } catch (e, st) {
+      debugPrint('Load pack error for ${widget.packId}: $e\n$st');
+      rethrow;
+    }
   }
 
   Future<void> _release() async {
@@ -65,7 +72,9 @@ class _PackDetailPageState extends State<PackDetailPage> {
           if (snapshot.hasError || !snapshot.hasData) {
             return SteriErrorState(
               title: 'Unable to load pack',
-              onRetry: () => setState(() => _packFuture = _loadPack()),
+              onRetry: () => setState(() {
+                _packFuture = _loadPack();
+              }),
             );
           }
           final pack = snapshot.data!;

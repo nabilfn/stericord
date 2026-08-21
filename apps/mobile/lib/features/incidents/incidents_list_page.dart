@@ -42,7 +42,9 @@ class _IncidentsListPageState extends State<IncidentsListPage> {
   }
 
   Future<void> _refresh() async {
-    setState(() => _future = _repository.listIncidents());
+    setState(() {
+      _future = _repository.listIncidents();
+    });
     await _future;
   }
 
