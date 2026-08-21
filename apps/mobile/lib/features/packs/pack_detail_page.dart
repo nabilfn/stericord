@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:stericord_mobile/core/components/components.dart';
 import 'package:stericord_mobile/core/constants/roles.dart';
+import 'package:stericord_mobile/core/theme/app_theme.dart';
 import 'package:stericord_mobile/features/auth/auth_controller.dart';
 import 'package:stericord_mobile/features/capture/evidence_capture_widget.dart';
 import 'package:stericord_mobile/features/cycles/cycle_model.dart';
@@ -45,49 +47,76 @@ class _PackDetailPageState extends State<PackDetailPage> {
         _error = null;
       });
     } catch (e) {
-      setState(() => _error = e.toString());
+      debugPrint('Release pack error: $e');
+      setState(() => _error = 'Could not release the pack. Try again.');
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Pack Detail')),
+      appBar: AppBar(title: const Text('Pack')),
       body: FutureBuilder<InstrumentPack>(
         future: _packFuture,
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const SteriLoadingState();
+          }
+          if (snapshot.hasError || !snapshot.hasData) {
+            return SteriErrorState(
+              title: 'Unable to load pack',
+              onRetry: () => setState(() => _packFuture = _loadPack()),
+            );
+          }
           final pack = snapshot.data!;
           final auth = context.watch<AuthController>();
           final canRelease = auth.hasRole([UserRole.hospitalAdmin, UserRole.cssdSupervisor, UserRole.cssdTechnician]);
 
           return ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.screenPadding),
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(pack.packCode, style: Theme.of(context).textTheme.headlineSmall),
+                  Expanded(child: Text(pack.packCode, style: AppTypography.heroHeader)),
                   PackStatusChip(status: pack.status),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.xl),
               Center(
                 child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(8)),
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    border: Border.all(color: AppColors.border),
+                    borderRadius: AppRadius.panelRadius,
+                  ),
                   child: QrImageView(data: pack.qrCode, size: 180),
                 ),
               ),
-              const SizedBox(height: 8),
-              Center(child: Text(pack.qrCode, style: const TextStyle(color: Colors.grey, fontSize: 12))),
-              const SizedBox(height: 20),
-              _DetailRow(label: 'Packed', value: pack.packedAt.toLocal().toString()),
-              _DetailRow(label: 'Sterilized', value: pack.sterilizedAt?.toLocal().toString()),
-              _DetailRow(label: 'Expiry', value: pack.expiryDate?.toLocal().toString()),
+              const SizedBox(height: AppSpacing.sm),
+              Center(child: Text(pack.qrCode, style: AppTypography.metadata)),
+              const SizedBox(height: AppSpacing.xl),
+              SteriCard(
+                child: Column(
+                  children: [
+                    _DetailRow(label: 'Packed', value: _formatDateTime(pack.packedAt)),
+                    _DetailRow(label: 'Sterilized', value: pack.sterilizedAt != null ? _formatDateTime(pack.sterilizedAt!) : null),
+                    // expiryDate is a DATE column with no time-of-day component -- format
+                    // its UTC y/m/d directly rather than through _formatDateTime's toLocal(),
+                    // which could otherwise shift it to the wrong calendar day depending on
+                    // the device's timezone offset.
+                    _DetailRow(label: 'Expiry', value: pack.expiryDate != null ? _formatDateOnly(pack.expiryDate!) : null, showDivider: false),
+                  ],
+                ),
+              ),
               if (_error != null) ...[
-                const SizedBox(height: 8),
-                Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 13)),
+                const SizedBox(height: AppSpacing.md),
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(color: AppColors.failSoft, borderRadius: BorderRadius.circular(AppRadius.small)),
+                  child: Text(_error!, style: const TextStyle(color: AppColors.fail, fontSize: 13, fontWeight: FontWeight.w500)),
+                ),
               ],
               if (canRelease && pack.status == PackStatus.pendingVerification)
                 FutureBuilder<SterilizationCycle>(
@@ -96,14 +125,14 @@ class _PackDetailPageState extends State<PackDetailPage> {
                     final eligible = cycleSnapshot.data?.cycleStatus == CycleStatus.passed;
                     if (!eligible) return const SizedBox.shrink();
                     return Padding(
-                      padding: const EdgeInsets.only(top: 12),
-                      child: ElevatedButton(onPressed: _release, child: const Text('Release Pack')),
+                      padding: const EdgeInsets.only(top: AppSpacing.md),
+                      child: ElevatedButton(onPressed: _release, child: const Text('Release pack')),
                     );
                   },
                 ),
-              const SizedBox(height: 24),
-              Text('Evidence', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sectionGap),
+              const SteriSectionHeader(title: 'Evidence'),
+              const SizedBox(height: AppSpacing.md),
               EvidenceCaptureWidget(entityType: 'instrument_pack', entityId: pack.id),
             ],
           );
@@ -111,23 +140,46 @@ class _PackDetailPageState extends State<PackDetailPage> {
       ),
     );
   }
+
+  String _formatDateTime(DateTime value) {
+    final local = value.toLocal();
+    final y = local.year.toString().padLeft(4, '0');
+    final m = local.month.toString().padLeft(2, '0');
+    final d = local.day.toString().padLeft(2, '0');
+    final h = local.hour.toString().padLeft(2, '0');
+    final min = local.minute.toString().padLeft(2, '0');
+    return '$y-$m-$d $h:$min';
+  }
+
+  String _formatDateOnly(DateTime value) {
+    final y = value.year.toString().padLeft(4, '0');
+    final m = value.month.toString().padLeft(2, '0');
+    final d = value.day.toString().padLeft(2, '0');
+    return '$y-$m-$d';
+  }
 }
 
 class _DetailRow extends StatelessWidget {
   final String label;
   final String? value;
-  const _DetailRow({required this.label, required this.value});
+  final bool showDivider;
+  const _DetailRow({required this.label, required this.value, this.showDivider = true});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          SizedBox(width: 110, child: Text(label, style: const TextStyle(color: Colors.grey))),
-          Expanded(child: Text(value ?? '—')),
-        ],
-      ),
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+          child: Row(
+            children: [
+              SizedBox(width: 110, child: Text(label, style: AppTypography.metadata)),
+              Expanded(child: Text(value ?? '—', style: AppTypography.body)),
+            ],
+          ),
+        ),
+        if (showDivider) const Divider(height: 1),
+      ],
     );
   }
 }

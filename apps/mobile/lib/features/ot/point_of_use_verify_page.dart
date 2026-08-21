@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:stericord_mobile/core/components/components.dart';
 import 'package:stericord_mobile/core/theme/app_theme.dart';
 import 'package:stericord_mobile/features/ai/ai_model.dart';
 import 'package:stericord_mobile/features/ai/ai_repository.dart';
+import 'package:stericord_mobile/features/auth/auth_controller.dart';
 import 'package:stericord_mobile/features/capture/evidence_capture_widget.dart';
 import 'package:stericord_mobile/features/cycles/cycle_model.dart';
 import 'package:stericord_mobile/features/ot/point_of_use_repository.dart';
@@ -52,8 +55,9 @@ class _PointOfUseVerifyPageState extends State<PointOfUseVerifyPage> {
       });
       await _refreshAiSuggestion();
     } catch (e) {
+      debugPrint('Load pack error: $e');
       setState(() {
-        _error = e.toString();
+        _error = 'Could not load this pack.';
         _loading = false;
       });
     }
@@ -102,7 +106,8 @@ class _PointOfUseVerifyPageState extends State<PointOfUseVerifyPage> {
         _queuedOffline = outcome == RecordVerificationOutcome.queuedOffline;
       });
     } catch (e) {
-      setState(() => _error = e.toString());
+      debugPrint('Record verification error: $e');
+      setState(() => _error = 'Could not record the verification. Try again.');
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -111,9 +116,9 @@ class _PointOfUseVerifyPageState extends State<PointOfUseVerifyPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Point of Use Verification')),
+      appBar: AppBar(title: const Text('Point of Use')),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const SteriLoadingState()
           : _outcome != null
               ? _buildOutcome(_outcome!)
               : _buildForm(),
@@ -121,49 +126,97 @@ class _PointOfUseVerifyPageState extends State<PointOfUseVerifyPage> {
   }
 
   Widget _buildOutcome(String result) {
-    final color = result == 'PASS'
-        ? AppColors.pass
+    final auth = context.watch<AuthController>();
+    final tone = result == 'PASS'
+        ? SteriStatusTone.pass
         : result == 'FAIL'
-            ? AppColors.fail
-            : AppColors.warning;
+            ? SteriStatusTone.fail
+            : SteriStatusTone.warning;
+    final color = result == 'PASS' ? AppColors.pass : (result == 'FAIL' ? AppColors.fail : AppColors.warning);
+    final title = result == 'PASS'
+        ? 'Verification complete'
+        : result == 'FAIL'
+            ? 'Critical: verification failed'
+            : 'Manual review required';
     final message = result == 'PASS'
-        ? 'PASS — pack marked as used.'
+        ? 'Pack marked as used.'
         : result == 'FAIL'
-            ? 'FAIL — pack quarantined, incident created, CSSD alerted.'
-            : 'UNDETERMINED — requires further manual review.';
+            ? 'This pack has been quarantined. CSSD has been notified.'
+            : "SteriCord couldn't determine this result confidently — it stays pending for manual review.";
 
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppSpacing.xxl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              result == 'PASS' ? Icons.check_circle : Icons.warning_amber_rounded,
-              size: 48,
-              color: color,
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.12), shape: BoxShape.circle),
+              alignment: Alignment.center,
+              child: Icon(
+                result == 'PASS'
+                    ? Icons.check_circle
+                    : (result == 'FAIL' ? Icons.error : Icons.help_outline),
+                size: 40,
+                color: color,
+              ),
             ),
-            const SizedBox(height: 16),
-            Text(message, textAlign: TextAlign.center, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: color)),
+            const SizedBox(height: AppSpacing.lg),
+            Text(title, textAlign: TextAlign.center, style: AppTypography.sectionHeader.copyWith(color: color)),
+            const SizedBox(height: AppSpacing.sm),
+            Text(message, textAlign: TextAlign.center, style: AppTypography.body.copyWith(color: AppColors.textSecondary)),
+            const SizedBox(height: AppSpacing.xl),
+            SteriCard(
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(child: Text(_pack?.packCode ?? '', style: AppTypography.cardTitle)),
+                      SteriStatusBadge(label: result, tone: tone, compact: true),
+                    ],
+                  ),
+                  if (auth.profile != null) ...[
+                    const Divider(height: AppSpacing.xl),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _OutcomeDetail(label: 'Verified by', value: auth.profile!.fullName),
+                        ),
+                        _OutcomeDetail(label: 'At', value: _formatTime(DateTime.now())),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
             if (_queuedOffline) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: AppColors.warning.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Text(
-                  'No connection — saved on this device and will sync automatically once online.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(color: AppColors.warningSoft, borderRadius: BorderRadius.circular(AppRadius.small)),
+                child: const Row(
+                  children: [
+                    Icon(Icons.cloud_off_rounded, size: 18, color: AppColors.warning),
+                    SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        'No connection — saved on this device and will sync automatically once online.',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.warning),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Done'),
+            const SizedBox(height: AppSpacing.xxl),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Done'),
+              ),
             ),
           ],
         ),
@@ -171,68 +224,86 @@ class _PointOfUseVerifyPageState extends State<PointOfUseVerifyPage> {
     );
   }
 
+  String _formatTime(DateTime value) {
+    final h = value.hour.toString().padLeft(2, '0');
+    final m = value.minute.toString().padLeft(2, '0');
+    return '$h:$m';
+  }
+
   Widget _buildForm() {
     final pack = _pack;
     if (pack == null) {
-      return Center(child: Text(_error ?? 'Pack not found'));
+      return SteriErrorState(title: 'Pack not found', message: _error ?? 'Try scanning again.', onRetry: _load);
     }
 
+    final eligible = _eligibility?.eligible ?? false;
+
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.screenPadding),
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(pack.packCode, style: Theme.of(context).textTheme.headlineSmall),
+            Expanded(child: Text(pack.packCode, style: AppTypography.heroHeader)),
             PackStatusChip(status: pack.status),
           ],
         ),
-        const SizedBox(height: 16),
-        if (_eligibility != null && !_eligibility!.eligible)
+        const SizedBox(height: AppSpacing.lg),
+        if (!eligible)
           Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(8)),
-            child: Column(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(color: AppColors.failSoft, borderRadius: BorderRadius.circular(AppRadius.small)),
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Not eligible for use', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.fail)),
-                Text(_eligibility!.reason ?? '', style: const TextStyle(color: AppColors.fail)),
+                const Icon(Icons.block, size: 18, color: AppColors.fail),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Not eligible for use', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.fail)),
+                      const SizedBox(height: 2),
+                      Text(_eligibility?.reason ?? '', style: const TextStyle(color: AppColors.fail, fontSize: 13)),
+                    ],
+                  ),
+                ),
               ],
             ),
           )
         else ...[
-          const Chip(label: Text('Eligible for use'), backgroundColor: AppColors.pass, labelStyle: TextStyle(color: Colors.white)),
-          const SizedBox(height: 16),
+          const SteriStatusBadge(label: 'ELIGIBLE FOR USE', tone: SteriStatusTone.pass, icon: Icons.check_circle_outline),
+          const SizedBox(height: AppSpacing.xl),
           TextField(
             controller: _patientRefController,
             decoration: const InputDecoration(labelText: 'Patient reference (optional)'),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           TextField(
             controller: _encounterRefController,
             decoration: const InputDecoration(labelText: 'Encounter reference (optional)'),
           ),
-          const SizedBox(height: 16),
-          Text('Indicator evidence', style: Theme.of(context).textTheme.titleSmall),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.xl),
+          const SteriSectionHeader(title: 'Indicator evidence'),
+          const SizedBox(height: AppSpacing.md),
           EvidenceCaptureWidget(entityType: 'instrument_pack', entityId: pack.id),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.xl),
           if (_aiSuggestion?.suggestedResult != null)
             Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: AppColors.scBlueLight, borderRadius: BorderRadius.circular(8)),
+              margin: const EdgeInsets.only(bottom: AppSpacing.md),
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(color: AppColors.infoSoft, borderRadius: BorderRadius.circular(AppRadius.small)),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.auto_awesome, size: 16, color: AppColors.scBlue),
-                  const SizedBox(width: 8),
+                  const Icon(Icons.auto_awesome, size: 16, color: AppColors.info),
+                  const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(
                       'AI suggests ${_aiSuggestion!.suggestedResult}'
                       '${_aiSuggestion!.confidenceBand != null ? ' (${_aiSuggestion!.confidenceBand} confidence)' : ''} '
                       'from the captured indicator evidence. Advisory only.',
-                      style: const TextStyle(fontSize: 12),
+                      style: const TextStyle(fontSize: 12.5, color: AppColors.textPrimary),
                     ),
                   ),
                 ],
@@ -241,56 +312,71 @@ class _PointOfUseVerifyPageState extends State<PointOfUseVerifyPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Verification result', style: Theme.of(context).textTheme.titleSmall),
+              const SteriSectionHeader(title: 'Verification result'),
               TextButton.icon(
                 onPressed: _refreshAiSuggestion,
                 icon: const Icon(Icons.refresh, size: 14),
-                label: const Text('Check AI suggestion', style: TextStyle(fontSize: 11)),
+                label: const Text('Check AI', style: TextStyle(fontSize: 12)),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              _resultButton('PASS', VerificationResult.pass, AppColors.pass),
-              const SizedBox(width: 8),
-              _resultButton('FAIL', VerificationResult.fail, AppColors.fail),
-              const SizedBox(width: 8),
-              _resultButton('UNDETERMINED', VerificationResult.undetermined, AppColors.warning),
-            ],
+          const SizedBox(height: AppSpacing.sm),
+          SteriResultOption(
+            title: 'PASS',
+            description: 'Indicator is within spec. Pack is safe for use.',
+            tone: SteriStatusTone.pass,
+            selected: _result == VerificationResult.pass,
+            onTap: () => setState(() => _result = VerificationResult.pass),
           ),
-          const SizedBox(height: 12),
+          SteriResultOption(
+            title: 'FAIL',
+            description: 'Sterility cannot be confirmed. Pack will be quarantined and CSSD alerted.',
+            tone: SteriStatusTone.fail,
+            selected: _result == VerificationResult.fail,
+            onTap: () => setState(() => _result = VerificationResult.fail),
+          ),
+          SteriResultOption(
+            title: 'UNDETERMINED',
+            description: 'Inconclusive — flags for manual review.',
+            tone: SteriStatusTone.warning,
+            selected: _result == VerificationResult.undetermined,
+            onTap: () => setState(() => _result = VerificationResult.undetermined),
+          ),
+          const SizedBox(height: AppSpacing.sm),
           TextField(
             controller: _notesController,
             maxLines: 2,
             decoration: const InputDecoration(labelText: 'Notes'),
           ),
           if (_error != null) ...[
-            const SizedBox(height: 12),
-            Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 13)),
+            const SizedBox(height: AppSpacing.md),
+            Text(_error!, style: const TextStyle(color: AppColors.fail, fontSize: 13, fontWeight: FontWeight.w500)),
           ],
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.xl),
           ElevatedButton(
             onPressed: (_result == null || _submitting) ? null : _submit,
-            child: Text(_submitting ? 'Recording…' : 'Record Verification'),
+            child: Text(_submitting ? 'Recording…' : 'Record verification'),
           ),
         ],
       ],
     );
   }
+}
 
-  Widget _resultButton(String label, VerificationResult value, Color color) {
-    final selected = _result == value;
-    return Expanded(
-      child: OutlinedButton(
-        style: OutlinedButton.styleFrom(
-          backgroundColor: selected ? color.withValues(alpha: 0.1) : null,
-          side: BorderSide(color: selected ? color : Colors.grey.shade300),
-          foregroundColor: color,
-        ),
-        onPressed: () => setState(() => _result = value),
-        child: Text(label, style: const TextStyle(fontSize: 12)),
-      ),
+class _OutcomeDetail extends StatelessWidget {
+  final String label;
+  final String value;
+  const _OutcomeDetail({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: AppTypography.metadata),
+        const SizedBox(height: 2),
+        Text(value, style: AppTypography.body),
+      ],
     );
   }
 }

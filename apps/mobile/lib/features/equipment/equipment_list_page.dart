@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:stericord_mobile/core/components/components.dart';
 import 'package:stericord_mobile/core/constants/roles.dart';
 import 'package:stericord_mobile/core/theme/app_theme.dart';
+import 'package:stericord_mobile/features/equipment/equipment_detail_page.dart';
 import 'package:stericord_mobile/features/equipment/equipment_model.dart';
 import 'package:stericord_mobile/features/equipment/equipment_repository.dart';
-import 'package:stericord_mobile/features/equipment/equipment_detail_page.dart';
 
 class EquipmentListPage extends StatefulWidget {
   const EquipmentListPage({super.key});
@@ -33,47 +34,32 @@ class _EquipmentListPageState extends State<EquipmentListPage> {
       appBar: AppBar(title: const Text('Equipment')),
       body: RefreshIndicator(
         onRefresh: _refresh,
+        color: AppColors.teal,
         child: FutureBuilder<List<Equipment>>(
           future: _future,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+              return const SteriLoadingState();
             }
             if (snapshot.hasError) {
-              return ListView(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Text('Failed to load equipment: ${snapshot.error}'),
-                  ),
-                ],
+              return SteriErrorState(
+                title: 'Unable to load equipment',
+                onRetry: _refresh,
               );
             }
             final equipment = snapshot.data ?? [];
             if (equipment.isEmpty) {
-              return ListView(
-                children: const [
-                  Padding(
-                    padding: EdgeInsets.all(24),
-                    child: Text('No equipment registered yet.'),
-                  ),
-                ],
+              return const SteriEmptyState(
+                icon: Icons.build_outlined,
+                title: 'No equipment yet',
+                message: 'Equipment registered for your organization will appear here.',
               );
             }
             return ListView.separated(
+              padding: const EdgeInsets.all(AppSpacing.screenPadding),
               itemCount: equipment.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
-              itemBuilder: (context, index) {
-                final item = equipment[index];
-                return ListTile(
-                  title: Text(item.equipmentCode, style: const TextStyle(fontWeight: FontWeight.w600)),
-                  subtitle: Text('${item.equipmentType.replaceAll('_', ' ')} · ${item.location ?? '—'}'),
-                  trailing: _StatusChip(status: item.operatingStatus),
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => EquipmentDetailPage(equipmentId: item.id)),
-                  ),
-                );
-              },
+              separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
+              itemBuilder: (context, index) => _EquipmentCard(equipment: equipment[index]),
             );
           },
         ),
@@ -82,30 +68,48 @@ class _EquipmentListPageState extends State<EquipmentListPage> {
   }
 }
 
-class _StatusChip extends StatelessWidget {
-  final EquipmentStatus status;
-  const _StatusChip({required this.status});
-
-  Color get _color {
-    switch (status) {
-      case EquipmentStatus.active:
-        return AppColors.pass;
-      case EquipmentStatus.lockedOut:
-        return AppColors.fail;
-      case EquipmentStatus.maintenance:
-        return AppColors.warning;
-      case EquipmentStatus.decommissioned:
-        return Colors.grey;
-    }
-  }
+class _EquipmentCard extends StatelessWidget {
+  final Equipment equipment;
+  const _EquipmentCard({required this.equipment});
 
   @override
   Widget build(BuildContext context) {
-    return Chip(
-      label: Text(status.dbValue.replaceAll('_', ' '), style: const TextStyle(fontSize: 11, color: Colors.white)),
-      backgroundColor: _color,
-      visualDensity: VisualDensity.compact,
-      padding: EdgeInsets.zero,
+    return SteriCard(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => EquipmentDetailPage(equipmentId: equipment.id)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(equipment.equipmentCode, style: AppTypography.cardTitle),
+                const SizedBox(height: 4),
+                Text(
+                  '${equipment.equipmentType.replaceAll('_', ' ')} · ${equipment.location ?? '—'}',
+                  style: AppTypography.metadata,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          _statusBadge(equipment.operatingStatus),
+        ],
+      ),
     );
+  }
+
+  Widget _statusBadge(EquipmentStatus status) {
+    switch (status) {
+      case EquipmentStatus.active:
+        return const SteriStatusBadge(label: 'ACTIVE', tone: SteriStatusTone.pass, icon: Icons.check_circle_outline);
+      case EquipmentStatus.lockedOut:
+        return const SteriStatusBadge(label: 'LOCKED OUT', tone: SteriStatusTone.fail, icon: Icons.lock_outline);
+      case EquipmentStatus.maintenance:
+        return const SteriStatusBadge(label: 'MAINTENANCE', tone: SteriStatusTone.warning, icon: Icons.build_outlined);
+      case EquipmentStatus.decommissioned:
+        return const SteriStatusBadge(label: 'DECOMMISSIONED', tone: SteriStatusTone.neutral, icon: Icons.block);
+    }
   }
 }

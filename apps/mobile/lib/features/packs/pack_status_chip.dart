@@ -1,36 +1,36 @@
 import 'package:flutter/material.dart';
-import 'package:stericord_mobile/core/theme/app_theme.dart';
+import 'package:stericord_mobile/core/components/components.dart';
 import 'package:stericord_mobile/features/packs/pack_model.dart';
 
-Color colorForPackStatus(PackStatus status) {
+SteriStatusTone toneForPackStatus(PackStatus status) {
   switch (status) {
     case PackStatus.packed:
     case PackStatus.used:
     case PackStatus.expired:
-      return Colors.grey;
+      return SteriStatusTone.neutral;
     case PackStatus.sterilizing:
-      return AppColors.scBlue;
+      return SteriStatusTone.info;
     case PackStatus.pendingVerification:
-      return AppColors.warning;
+      return SteriStatusTone.warning;
     case PackStatus.released:
-      return AppColors.pass;
+      return SteriStatusTone.pass;
     case PackStatus.quarantined:
     case PackStatus.recalled:
-      return AppColors.fail;
+      return SteriStatusTone.fail;
   }
 }
 
 class PackStatusChip extends StatelessWidget {
   final PackStatus status;
-  const PackStatusChip({super.key, required this.status});
+  final bool compact;
+  const PackStatusChip({super.key, required this.status, this.compact = false});
 
   @override
   Widget build(BuildContext context) {
-    return Chip(
-      label: Text(status.dbValue.replaceAll('_', ' '), style: const TextStyle(fontSize: 11, color: Colors.white)),
-      backgroundColor: colorForPackStatus(status),
-      visualDensity: VisualDensity.compact,
-      padding: EdgeInsets.zero,
+    return SteriStatusBadge(
+      label: status.dbValue.replaceAll('_', ' '),
+      tone: toneForPackStatus(status),
+      compact: compact,
     );
   }
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:stericord_mobile/core/components/components.dart';
+import 'package:stericord_mobile/core/theme/app_theme.dart';
 import 'package:stericord_mobile/features/auth/auth_controller.dart';
 import 'package:stericord_mobile/features/packs/pack_model.dart';
 import 'package:stericord_mobile/features/packs/pack_repository.dart';
@@ -62,7 +64,8 @@ class _RegisterPackSheetState extends State<RegisterPackSheet> {
       );
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
-      setState(() => _error = e.toString());
+      debugPrint('Register pack error: $e');
+      setState(() => _error = 'Could not register the pack. Check the code and try again.');
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -72,10 +75,10 @@ class _RegisterPackSheetState extends State<RegisterPackSheet> {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+        left: AppSpacing.xxl,
+        right: AppSpacing.xxl,
+        top: AppSpacing.xxl,
+        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.xxl,
       ),
       child: Form(
         key: _formKey,
@@ -83,33 +86,50 @@ class _RegisterPackSheetState extends State<RegisterPackSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('Register Pack', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 16),
-            _loadingSets
-                ? const Center(child: CircularProgressIndicator())
-                : DropdownButtonFormField<String>(
-                    value: _selectedSetId,
-                    decoration: const InputDecoration(labelText: 'Instrument set'),
-                    items: _instrumentSets
-                        .map((s) => DropdownMenuItem(value: s.id, child: Text(s.name)))
-                        .toList(),
-                    onChanged: (value) => setState(() => _selectedSetId = value),
-                    validator: (v) => v == null ? 'Select an instrument set' : null,
-                  ),
-            const SizedBox(height: 12),
+            Text('Register pack', style: AppTypography.sectionHeader),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Pick the instrument set and give this pack a code.',
+              style: AppTypography.body.copyWith(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            if (_loadingSets)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                child: SteriInlineProgress(label: 'Loading instrument sets…'),
+              )
+            else if (_instrumentSets.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+                child: Text(
+                  'No instrument sets available yet.',
+                  style: TextStyle(color: AppColors.warning, fontSize: 13, fontWeight: FontWeight.w500),
+                ),
+              )
+            else
+              DropdownButtonFormField<String>(
+                initialValue: _selectedSetId,
+                decoration: const InputDecoration(labelText: 'Instrument set'),
+                items: _instrumentSets
+                    .map((s) => DropdownMenuItem(value: s.id, child: Text(s.name)))
+                    .toList(),
+                onChanged: (value) => setState(() => _selectedSetId = value),
+                validator: (v) => v == null ? 'Select an instrument set' : null,
+              ),
+            const SizedBox(height: AppSpacing.md),
             TextFormField(
               controller: _packCodeController,
-              decoration: const InputDecoration(labelText: 'Pack code'),
+              decoration: const InputDecoration(labelText: 'Pack code', hintText: 'e.g. PK-2026-00931'),
               validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
             ),
             if (_error != null) ...[
-              const SizedBox(height: 12),
-              Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 13)),
+              const SizedBox(height: AppSpacing.md),
+              Text(_error!, style: const TextStyle(color: AppColors.fail, fontSize: 13, fontWeight: FontWeight.w500)),
             ],
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl),
             ElevatedButton(
               onPressed: _submitting ? null : _submit,
-              child: Text(_submitting ? 'Registering…' : 'Register Pack'),
+              child: Text(_submitting ? 'Registering…' : 'Register pack'),
             ),
           ],
         ),

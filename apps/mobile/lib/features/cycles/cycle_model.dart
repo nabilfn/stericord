@@ -63,6 +63,7 @@ class SterilizationCycle {
   final double? pressure;
   final int? holdTimeSeconds;
   final CycleStatus cycleStatus;
+  final DateTime createdAt;
 
   const SterilizationCycle({
     required this.id,
@@ -76,6 +77,7 @@ class SterilizationCycle {
     required this.pressure,
     required this.holdTimeSeconds,
     required this.cycleStatus,
+    required this.createdAt,
   });
 
   factory SterilizationCycle.fromJson(Map<String, dynamic> json) {
@@ -91,6 +93,7 @@ class SterilizationCycle {
       pressure: (json['pressure'] as num?)?.toDouble(),
       holdTimeSeconds: json['hold_time_seconds'] as int?,
       cycleStatus: CycleStatus.fromDb(json['cycle_status'] as String),
+      createdAt: DateTime.parse(json['created_at'] as String),
     );
   }
 }

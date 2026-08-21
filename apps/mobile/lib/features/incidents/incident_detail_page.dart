@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:stericord_mobile/core/components/components.dart';
 import 'package:stericord_mobile/core/constants/roles.dart';
+import 'package:stericord_mobile/core/theme/app_theme.dart';
 import 'package:stericord_mobile/features/auth/auth_controller.dart';
 import 'package:stericord_mobile/features/incidents/incident_model.dart';
 import 'package:stericord_mobile/features/incidents/incident_repository.dart';
@@ -37,7 +39,8 @@ class _IncidentDetailPageState extends State<IncidentDetailPage> {
       await _repository.acknowledge(widget.incidentId);
       await _refresh();
     } catch (e) {
-      setState(() => _error = e.toString());
+      debugPrint('Acknowledge incident error: $e');
+      setState(() => _error = 'Could not acknowledge this incident. Try again.');
     }
   }
 
@@ -61,7 +64,8 @@ class _IncidentDetailPageState extends State<IncidentDetailPage> {
       await _repository.resolve(widget.incidentId, notes, close: close);
       await _refresh();
     } catch (e) {
-      setState(() => _error = e.toString());
+      debugPrint('Resolve incident error: $e');
+      setState(() => _error = 'Could not update this incident. Try again.');
     }
   }
 
@@ -71,51 +75,75 @@ class _IncidentDetailPageState extends State<IncidentDetailPage> {
     final canManage = auth.hasRole([UserRole.hospitalAdmin, UserRole.cssdSupervisor]);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Incident Detail')),
+      appBar: AppBar(title: const Text('Incident')),
       body: FutureBuilder<Incident>(
         future: _future,
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const SteriLoadingState();
+          }
+          if (snapshot.hasError || !snapshot.hasData) {
+            return SteriErrorState(title: 'Unable to load incident', onRetry: _refresh);
+          }
           final incident = snapshot.data!;
-          final canAct = canManage && !['RESOLVED', 'CLOSED'].contains(incident.status.dbValue);
+          final canAct = canManage && incident.status != IncidentStatus.resolved && incident.status != IncidentStatus.closed;
 
           return ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.screenPadding),
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: Text(incident.sourceType.replaceAll('_', ' '), style: Theme.of(context).textTheme.headlineSmall),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(incident.sourceType.replaceAll('_', ' '), style: AppTypography.heroHeader),
+                        const SizedBox(height: 2),
+                        Text('Detected ${_formatDateTime(incident.detectedAt)}', style: AppTypography.metadata),
+                      ],
+                    ),
                   ),
-                  Chip(
-                    label: Text(incident.status.dbValue.replaceAll('_', ' '), style: const TextStyle(fontSize: 11, color: Colors.white)),
-                    backgroundColor: colorForIncidentStatus(incident.status),
+                  const SizedBox(width: AppSpacing.sm),
+                  SteriStatusBadge(
+                    label: incident.status.dbValue.replaceAll('_', ' '),
+                    tone: toneForIncidentStatus(incident.status),
                   ),
                 ],
               ),
-              Text('Detected ${incident.detectedAt.toLocal()}', style: const TextStyle(color: Colors.grey)),
-              const SizedBox(height: 16),
-              Text(incident.description ?? ''),
+              if (incident.priority == 'CRITICAL') ...[
+                const SizedBox(height: AppSpacing.md),
+                const SteriStatusBadge(label: 'CRITICAL PRIORITY', tone: SteriStatusTone.fail, icon: Icons.priority_high),
+              ],
+              if (incident.description != null && incident.description!.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.xl),
+                SteriCard(child: Text(incident.description!, style: AppTypography.body)),
+              ],
               if (incident.resolutionNotes != null) ...[
-                const Divider(height: 32),
-                Text('Resolution', style: Theme.of(context).textTheme.titleSmall),
-                Text(incident.resolutionNotes!),
+                const SizedBox(height: AppSpacing.sectionGap),
+                const SteriSectionHeader(title: 'Resolution'),
+                const SizedBox(height: AppSpacing.md),
+                SteriCard(child: Text(incident.resolutionNotes!, style: AppTypography.body)),
               ],
               if (_error != null) ...[
-                const SizedBox(height: 12),
-                Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 13)),
+                const SizedBox(height: AppSpacing.md),
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(color: AppColors.failSoft, borderRadius: BorderRadius.circular(AppRadius.small)),
+                  child: Text(_error!, style: const TextStyle(color: AppColors.fail, fontSize: 13, fontWeight: FontWeight.w500)),
+                ),
               ],
               if (canAct) ...[
-                const SizedBox(height: 24),
+                const SizedBox(height: AppSpacing.sectionGap),
                 Wrap(
-                  spacing: 8,
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.sm,
                   children: [
-                    if (['DETECTED', 'ALERTED'].contains(incident.status.dbValue))
+                    if (incident.status == IncidentStatus.detected || incident.status == IncidentStatus.alerted)
                       ElevatedButton(onPressed: _acknowledge, child: const Text('Acknowledge')),
                     OutlinedButton(onPressed: () => _resolve(close: false), child: const Text('Resolve')),
                     OutlinedButton(
-                      style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+                      style: OutlinedButton.styleFrom(foregroundColor: AppColors.fail),
                       onPressed: () => _resolve(close: true),
                       child: const Text('Close'),
                     ),
@@ -127,5 +155,15 @@ class _IncidentDetailPageState extends State<IncidentDetailPage> {
         },
       ),
     );
+  }
+
+  String _formatDateTime(DateTime value) {
+    final local = value.toLocal();
+    final y = local.year.toString().padLeft(4, '0');
+    final m = local.month.toString().padLeft(2, '0');
+    final d = local.day.toString().padLeft(2, '0');
+    final h = local.hour.toString().padLeft(2, '0');
+    final min = local.minute.toString().padLeft(2, '0');
+    return '$y-$m-$d $h:$min';
   }
 }

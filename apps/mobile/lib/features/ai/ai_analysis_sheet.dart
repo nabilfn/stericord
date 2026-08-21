@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:stericord_mobile/core/components/components.dart';
 import 'package:stericord_mobile/core/theme/app_theme.dart';
 import 'package:stericord_mobile/features/ai/ai_model.dart';
 import 'package:stericord_mobile/features/ai/ai_repository.dart';
 
-Color colorForConfidenceBand(String? band) {
+SteriStatusTone toneForConfidenceBand(String? band) {
   switch (band) {
     case 'HIGH':
-      return AppColors.pass;
+      return SteriStatusTone.pass;
     case 'MEDIUM':
-      return AppColors.warning;
+      return SteriStatusTone.warning;
     case 'LOW':
-      return AppColors.fail;
+      return SteriStatusTone.fail;
     default:
-      return Colors.grey;
+      return SteriStatusTone.neutral;
   }
 }
 
@@ -55,7 +56,8 @@ class _AiAnalysisSheetState extends State<AiAnalysisSheet> {
       final analysis = await _repository.requestAnalysis(widget.evidenceFileId);
       setState(() => _analysis = analysis);
     } catch (e) {
-      setState(() => _error = e.toString());
+      debugPrint('AI analysis error: $e');
+      setState(() => _error = 'Could not run analysis. Try again.');
     } finally {
       if (mounted) setState(() => _requesting = false);
     }
@@ -64,73 +66,136 @@ class _AiAnalysisSheetState extends State<AiAnalysisSheet> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.xxl),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('AI Analysis', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 12),
+          Row(
+            children: [
+              const Icon(Icons.auto_awesome, size: 18, color: AppColors.info),
+              const SizedBox(width: AppSpacing.sm),
+              Text('AI-assisted analysis', style: AppTypography.sectionHeader),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
           if (_loading)
-            const Center(child: CircularProgressIndicator())
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
+              child: SteriInlineProgress(label: 'Loading…'),
+            )
           else ...[
             if (_analysis == null)
               ElevatedButton(
                 onPressed: _requesting ? null : _request,
-                child: Text(_requesting ? 'Analyzing…' : 'Analyze with AI'),
+                child: _requesting
+                    ? const SteriInlineProgress(label: 'Analyzing evidence…')
+                    : const Text('Analyze with AI'),
               )
-            else ...[
-              Wrap(
-                spacing: 8,
-                children: [
-                  Chip(label: Text(_analysis!.status.replaceAll('_', ' '))),
-                  if (_analysis!.suggestedResult != null)
-                    Chip(label: Text('Suggests ${_analysis!.suggestedResult}')),
-                  if (_analysis!.confidenceBand != null)
-                    Chip(
-                      label: Text(
-                        '${_analysis!.confidenceBand} confidence'
-                        '${_analysis!.confidence != null ? ' (${(_analysis!.confidence! * 100).round()}%)' : ''}',
-                        style: const TextStyle(color: Colors.white, fontSize: 11),
-                      ),
-                      backgroundColor: colorForConfidenceBand(_analysis!.confidenceBand),
-                    ),
-                ],
-              ),
-              if (_analysis!.status == 'NOT_CONFIGURED')
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                  child: Text("Gemini isn't configured in this environment.", style: TextStyle(color: Colors.grey, fontSize: 12)),
-                ),
-              if (_analysis!.status == 'FAILED')
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Text(_analysis!.errorMessage ?? 'Analysis failed.', style: const TextStyle(color: Colors.red, fontSize: 12)),
-                ),
-              if (_analysis!.observations.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: _analysis!.observations.map((o) => Text('• $o', style: const TextStyle(fontSize: 12))).toList(),
-                  ),
-                ),
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 4),
-                child: Text(
-                  'Advisory only — a human always confirms the result during verification.',
-                  style: TextStyle(fontSize: 11, color: Colors.grey),
-                ),
-              ),
-              if (_error != null) Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 12)),
+            else
+              _AnalysisResult(analysis: _analysis!),
+            if (_error != null) ...[
+              const SizedBox(height: AppSpacing.md),
+              Text(_error!, style: const TextStyle(color: AppColors.fail, fontSize: 13, fontWeight: FontWeight.w500)),
+            ],
+            if (_analysis != null) ...[
+              const SizedBox(height: AppSpacing.md),
               TextButton(
                 onPressed: _requesting ? null : _request,
-                child: const Text('Re-run analysis'),
+                child: Text(_requesting ? 'Analyzing…' : 'Re-run analysis'),
               ),
             ],
           ],
         ],
       ),
+    );
+  }
+}
+
+class _AnalysisResult extends StatelessWidget {
+  final AiAnalysis analysis;
+  const _AnalysisResult({required this.analysis});
+
+  @override
+  Widget build(BuildContext context) {
+    if (analysis.status == 'NOT_CONFIGURED') {
+      return Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(color: AppColors.neutralSoft, borderRadius: BorderRadius.circular(AppRadius.small)),
+        child: const Text(
+          "AI analysis isn't configured in this environment. Enter the verification result manually.",
+          style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+        ),
+      );
+    }
+    if (analysis.status == 'FAILED') {
+      return Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(color: AppColors.failSoft, borderRadius: BorderRadius.circular(AppRadius.small)),
+        child: Text(
+          analysis.errorMessage ?? 'Analysis failed.',
+          style: const TextStyle(color: AppColors.fail, fontSize: 13, fontWeight: FontWeight.w500),
+        ),
+      );
+    }
+
+    final undetermined = analysis.suggestedResult == 'UNDETERMINED' || analysis.suggestedResult == null;
+    if (undetermined) {
+      return Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(color: AppColors.warningSoft, borderRadius: BorderRadius.circular(AppRadius.small)),
+        child: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Manual review required', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.warning, fontSize: 14)),
+            SizedBox(height: 4),
+            Text(
+              "SteriCord couldn't determine this result confidently. Don't use this as the final verification.",
+              style: TextStyle(color: AppColors.warning, fontSize: 12.5),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final tone = analysis.suggestedResult == 'PASS' ? SteriStatusTone.pass : SteriStatusTone.fail;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Suggested result', style: AppTypography.metadata),
+        const SizedBox(height: AppSpacing.xs),
+        SteriStatusBadge(label: analysis.suggestedResult!, tone: tone),
+        if (analysis.confidenceBand != null) ...[
+          const SizedBox(height: AppSpacing.md),
+          Text('Confidence', style: AppTypography.metadata),
+          const SizedBox(height: AppSpacing.xs),
+          SteriStatusBadge(
+            label: '${analysis.confidenceBand}'
+                '${analysis.confidence != null ? ' (${(analysis.confidence! * 100).round()}%)' : ''}',
+            tone: toneForConfidenceBand(analysis.confidenceBand),
+            compact: true,
+          ),
+        ],
+        if (analysis.observations.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.md),
+          Text('Observations', style: AppTypography.metadata),
+          const SizedBox(height: AppSpacing.xs),
+          ...analysis.observations.map((o) => Padding(
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Text('• $o', style: AppTypography.body),
+              )),
+        ],
+        const SizedBox(height: AppSpacing.md),
+        Container(
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          decoration: BoxDecoration(color: AppColors.neutralSoft, borderRadius: BorderRadius.circular(AppRadius.small)),
+          child: const Text(
+            'Advisory only — a human always confirms the result during verification.',
+            style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
+          ),
+        ),
+      ],
     );
   }
 }

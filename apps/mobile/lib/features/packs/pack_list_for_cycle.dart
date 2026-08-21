@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:stericord_mobile/core/components/components.dart';
 import 'package:stericord_mobile/core/constants/roles.dart';
+import 'package:stericord_mobile/core/theme/app_theme.dart';
 import 'package:stericord_mobile/features/auth/auth_controller.dart';
 import 'package:stericord_mobile/features/cycles/cycle_model.dart';
 import 'package:stericord_mobile/features/packs/pack_detail_page.dart';
@@ -49,7 +51,7 @@ class PackListForCycleState extends State<PackListForCycle> {
             TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
             TextButton(
               onPressed: () => Navigator.of(context).pop(controller.text),
-              child: const Text('Quarantine'),
+              child: const Text('Quarantine', style: TextStyle(color: AppColors.fail)),
             ),
           ],
         );
@@ -72,34 +74,58 @@ class PackListForCycleState extends State<PackListForCycle> {
       builder: (context, snapshot) {
         final packs = snapshot.data ?? [];
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+            child: SteriInlineProgress(label: 'Loading packs…'),
+          );
         }
         if (packs.isEmpty) {
-          return const Text('No packs registered yet.', style: TextStyle(color: Colors.grey));
+          return const SteriEmptyState(
+            icon: Icons.inventory_2_outlined,
+            title: 'No packs yet',
+            message: 'Register an instrument pack for this cycle to begin tracking it.',
+          );
         }
         return Column(
           children: packs.map((pack) {
-            final canReleaseThis = canRelease && pack.status == PackStatus.pendingVerification && widget.cycleStatus == CycleStatus.passed;
+            final canReleaseThis = canRelease &&
+                pack.status == PackStatus.pendingVerification &&
+                widget.cycleStatus == CycleStatus.passed;
             final canQuarantineThis = canQuarantine &&
                 (pack.status == PackStatus.pendingVerification || pack.status == PackStatus.released);
-            return ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(pack.packCode, style: const TextStyle(fontWeight: FontWeight.w600)),
-              subtitle: PackStatusChip(status: pack.status),
-              trailing: Wrap(
-                spacing: 4,
-                children: [
-                  if (canReleaseThis)
-                    TextButton(onPressed: () => _release(pack.id), child: const Text('Release')),
-                  if (canQuarantineThis)
-                    TextButton(
-                      onPressed: () => _quarantine(pack.id),
-                      child: const Text('Quarantine', style: TextStyle(color: Colors.red)),
+            return Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: SteriCard(
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => PackDetailPage(packId: pack.id)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(child: Text(pack.packCode, style: AppTypography.cardTitle)),
+                        PackStatusChip(status: pack.status, compact: true),
+                      ],
                     ),
-                ],
-              ),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => PackDetailPage(packId: pack.id)),
+                    if (canReleaseThis || canQuarantineThis) ...[
+                      const SizedBox(height: AppSpacing.sm),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          if (canReleaseThis)
+                            TextButton(onPressed: () => _release(pack.id), child: const Text('Release')),
+                          if (canQuarantineThis)
+                            TextButton(
+                              onPressed: () => _quarantine(pack.id),
+                              style: TextButton.styleFrom(foregroundColor: AppColors.fail),
+                              child: const Text('Quarantine'),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
               ),
             );
           }).toList(),

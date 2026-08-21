@@ -1,35 +1,35 @@
 import 'package:flutter/material.dart';
-import 'package:stericord_mobile/core/theme/app_theme.dart';
+import 'package:stericord_mobile/core/components/components.dart';
 import 'package:stericord_mobile/features/cycles/cycle_model.dart';
 
-Color colorForCycleStatus(CycleStatus status) {
+SteriStatusTone toneForCycleStatus(CycleStatus status) {
   switch (status) {
     case CycleStatus.created:
     case CycleStatus.completed:
-      return Colors.grey;
+      return SteriStatusTone.neutral;
     case CycleStatus.running:
-      return AppColors.scBlue;
+      return SteriStatusTone.info;
     case CycleStatus.pendingVerification:
-      return AppColors.warning;
+      return SteriStatusTone.warning;
     case CycleStatus.passed:
-      return AppColors.pass;
+      return SteriStatusTone.pass;
     case CycleStatus.failed:
     case CycleStatus.quarantined:
-      return AppColors.fail;
+      return SteriStatusTone.fail;
   }
 }
 
 class CycleStatusChip extends StatelessWidget {
   final CycleStatus status;
-  const CycleStatusChip({super.key, required this.status});
+  final bool compact;
+  const CycleStatusChip({super.key, required this.status, this.compact = false});
 
   @override
   Widget build(BuildContext context) {
-    return Chip(
-      label: Text(status.dbValue.replaceAll('_', ' '), style: const TextStyle(fontSize: 11, color: Colors.white)),
-      backgroundColor: colorForCycleStatus(status),
-      visualDensity: VisualDensity.compact,
-      padding: EdgeInsets.zero,
+    return SteriStatusBadge(
+      label: status.dbValue.replaceAll('_', ' '),
+      tone: toneForCycleStatus(status),
+      compact: compact,
     );
   }
 }

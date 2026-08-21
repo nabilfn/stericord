@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:stericord_mobile/core/components/components.dart';
 import 'package:stericord_mobile/core/theme/app_theme.dart';
 import 'package:stericord_mobile/features/ocr/ocr_model.dart';
 import 'package:stericord_mobile/features/ocr/ocr_repository.dart';
@@ -81,7 +82,8 @@ class _OcrReviewSheetState extends State<OcrReviewSheet> {
       setState(() => _extraction = extraction);
       _populateForm();
     } catch (e) {
-      setState(() => _error = e.toString());
+      debugPrint('OCR extraction error: $e');
+      setState(() => _error = 'Could not extract from this photo. Try again.');
     } finally {
       if (mounted) setState(() => _requesting = false);
     }
@@ -107,7 +109,8 @@ class _OcrReviewSheetState extends State<OcrReviewSheet> {
       final updated = await _repository.confirmExtraction(_extraction!.id, fields);
       setState(() => _extraction = updated);
     } catch (e) {
-      setState(() => _error = e.toString());
+      debugPrint('Confirm OCR error: $e');
+      setState(() => _error = 'Could not save these values. Try again.');
     } finally {
       if (mounted) setState(() => _confirming = false);
     }
@@ -117,59 +120,69 @@ class _OcrReviewSheetState extends State<OcrReviewSheet> {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+        left: AppSpacing.xxl,
+        right: AppSpacing.xxl,
+        top: AppSpacing.xxl,
+        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.xxl,
       ),
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('OCR Extraction', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 12),
+            Text('Autoclave receipt', style: AppTypography.sectionHeader),
+            const SizedBox(height: AppSpacing.lg),
             if (_loading)
-              const Center(child: CircularProgressIndicator())
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                child: SteriInlineProgress(label: 'Loading…'),
+              )
             else ...[
               if (_extraction == null)
                 ElevatedButton(
                   onPressed: _requesting ? null : _requestExtraction,
-                  child: Text(_requesting ? 'Extracting…' : 'Extract with OCR'),
+                  child: _requesting ? const SteriInlineProgress(label: 'Extracting…') : const Text('Extract with OCR'),
                 )
               else ...[
                 Row(
                   children: [
-                    Chip(label: Text(_extraction!.status.replaceAll('_', ' '))),
+                    SteriStatusBadge(
+                      label: _extraction!.status.replaceAll('_', ' '),
+                      tone: _extraction!.status == 'FAILED' ? SteriStatusTone.fail : SteriStatusTone.neutral,
+                      compact: true,
+                    ),
                     const Spacer(),
                     if (_extraction!.confirmedAt != null)
-                      const Row(
-                        children: [
-                          Icon(Icons.check_circle, size: 16, color: AppColors.pass),
-                          SizedBox(width: 4),
-                          Text('Confirmed', style: TextStyle(color: AppColors.pass, fontSize: 12)),
-                        ],
-                      ),
+                      const SteriStatusBadge(label: 'CONFIRMED', tone: SteriStatusTone.pass, icon: Icons.check_circle_outline, compact: true),
                   ],
                 ),
-                if (_extraction!.status == 'NOT_CONFIGURED')
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8),
-                    child: Text(
+                if (_extraction!.status == 'NOT_CONFIGURED') ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.sm),
+                    decoration: BoxDecoration(color: AppColors.neutralSoft, borderRadius: BorderRadius.circular(AppRadius.small)),
+                    child: const Text(
                       "Document AI isn't configured in this environment. Enter values manually below.",
-                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                      style: TextStyle(color: AppColors.textSecondary, fontSize: 12.5),
                     ),
                   ),
-                if (_extraction!.status == 'FAILED')
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Text(_extraction!.errorMessage ?? 'OCR failed.', style: const TextStyle(color: Colors.red, fontSize: 12)),
+                ],
+                if (_extraction!.status == 'FAILED') ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.sm),
+                    decoration: BoxDecoration(color: AppColors.failSoft, borderRadius: BorderRadius.circular(AppRadius.small)),
+                    child: Text(
+                      _extraction!.errorMessage ?? 'OCR failed.',
+                      style: const TextStyle(color: AppColors.fail, fontSize: 12.5, fontWeight: FontWeight.w500),
+                    ),
                   ),
-                const SizedBox(height: 8),
+                ],
+                const SizedBox(height: AppSpacing.lg),
                 TextField(controller: _cycleNumberController, decoration: const InputDecoration(labelText: 'Cycle number', isDense: true)),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.md),
                 TextField(controller: _machineIdController, decoration: const InputDecoration(labelText: 'Machine ID', isDense: true)),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.md),
                 Row(
                   children: [
                     Expanded(
@@ -179,7 +192,7 @@ class _OcrReviewSheetState extends State<OcrReviewSheet> {
                         decoration: const InputDecoration(labelText: 'Temp (°C)', isDense: true),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: TextField(
                         controller: _pressureController,
@@ -189,26 +202,27 @@ class _OcrReviewSheetState extends State<OcrReviewSheet> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.md),
                 TextField(
                   controller: _holdTimeController,
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(labelText: 'Hold time (sec)', isDense: true),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.md),
                 TextField(controller: _resultController, decoration: const InputDecoration(labelText: 'Result', isDense: true)),
                 if (_error != null) ...[
-                  const SizedBox(height: 8),
-                  Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 12)),
+                  const SizedBox(height: AppSpacing.md),
+                  Text(_error!, style: const TextStyle(color: AppColors.fail, fontSize: 13, fontWeight: FontWeight.w500)),
                 ],
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.xl),
                 ElevatedButton(
                   onPressed: _confirming ? null : _confirm,
                   child: Text(_confirming ? 'Saving…' : (_extraction!.confirmedAt != null ? 'Update confirmation' : 'Confirm values')),
                 ),
+                const SizedBox(height: AppSpacing.sm),
                 TextButton(
                   onPressed: _requesting ? null : _requestExtraction,
-                  child: const Text('Re-run OCR'),
+                  child: Text(_requesting ? 'Extracting…' : 'Re-run OCR'),
                 ),
               ],
             ],

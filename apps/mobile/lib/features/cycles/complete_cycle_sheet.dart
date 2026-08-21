@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:stericord_mobile/core/theme/app_theme.dart';
 import 'package:stericord_mobile/features/cycles/cycle_repository.dart';
 
 class CompleteCycleSheet extends StatefulWidget {
@@ -39,7 +40,8 @@ class _CompleteCycleSheetState extends State<CompleteCycleSheet> {
       );
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
-      setState(() => _error = e.toString());
+      debugPrint('Complete cycle error: $e');
+      setState(() => _error = 'Could not complete the cycle. Check the readings and try again.');
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -49,44 +51,47 @@ class _CompleteCycleSheetState extends State<CompleteCycleSheet> {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+        left: AppSpacing.xxl,
+        right: AppSpacing.xxl,
+        top: AppSpacing.xxl,
+        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.xxl,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Complete Cycle', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 4),
-          const Text('Enter the final readings from the autoclave receipt.', style: TextStyle(color: Colors.grey, fontSize: 12)),
-          const SizedBox(height: 16),
+          Text('Complete cycle', style: AppTypography.sectionHeader),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Enter the final readings from the autoclave receipt.',
+            style: AppTypography.body.copyWith(color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: AppSpacing.xl),
           TextField(
             controller: _temperatureController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: const InputDecoration(labelText: 'Temperature (°C)'),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           TextField(
             controller: _pressureController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: const InputDecoration(labelText: 'Pressure (bar)'),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           TextField(
             controller: _holdTimeController,
             keyboardType: TextInputType.number,
             decoration: const InputDecoration(labelText: 'Hold time (seconds)'),
           ),
           if (_error != null) ...[
-            const SizedBox(height: 12),
-            Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 13)),
+            const SizedBox(height: AppSpacing.md),
+            Text(_error!, style: const TextStyle(color: AppColors.fail, fontSize: 13, fontWeight: FontWeight.w500)),
           ],
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.xl),
           ElevatedButton(
             onPressed: _submitting ? null : _submit,
-            child: Text(_submitting ? 'Saving…' : 'Complete Cycle'),
+            child: Text(_submitting ? 'Saving…' : 'Complete cycle'),
           ),
         ],
       ),

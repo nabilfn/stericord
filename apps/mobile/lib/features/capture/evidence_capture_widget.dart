@@ -7,6 +7,7 @@ import 'package:stericord_mobile/core/vision/image_quality.dart';
 import 'package:stericord_mobile/features/auth/auth_controller.dart';
 import 'package:stericord_mobile/features/capture/evidence_model.dart';
 import 'package:stericord_mobile/features/capture/evidence_repository.dart';
+import 'package:stericord_mobile/features/capture/evidence_review_sheet.dart';
 import 'package:stericord_mobile/features/ocr/ocr_review_sheet.dart';
 import 'package:stericord_mobile/features/ai/ai_analysis_sheet.dart';
 
@@ -71,6 +72,21 @@ class _EvidenceCaptureWidgetState extends State<EvidenceCaptureWidget> {
       return;
     }
 
+    if (!mounted) return;
+    final usePhoto = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => EvidenceReviewSheet(file: file, evidenceType: _selectedType, quality: quality),
+    );
+
+    if (usePhoto == false) {
+      // Retake: relaunch the camera immediately rather than leaving the
+      // user staring at a dismissed sheet with no obvious next step.
+      await _capture();
+      return;
+    }
+    if (usePhoto != true) return;
+
     setState(() => _uploading = true);
     try {
       await _repository.uploadEvidence(
@@ -85,7 +101,8 @@ class _EvidenceCaptureWidgetState extends State<EvidenceCaptureWidget> {
       await _refresh();
       widget.onUploaded?.call();
     } catch (e) {
-      setState(() => _error = e.toString());
+      debugPrint('Upload evidence error: $e');
+      setState(() => _error = 'Could not upload the photo. Try again.');
     } finally {
       if (mounted) setState(() => _uploading = false);
     }
@@ -96,24 +113,24 @@ class _EvidenceCaptureWidgetState extends State<EvidenceCaptureWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Row(
+        Row(
           children: [
-            Icon(Icons.center_focus_strong, size: 14, color: Colors.grey),
-            SizedBox(width: 4),
+            const Icon(Icons.center_focus_strong, size: 14, color: AppColors.textSecondary),
+            const SizedBox(width: AppSpacing.xs),
             Expanded(
               child: Text(
                 'Fill the frame with the indicator, avoid glare, and hold steady.',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
+                style: AppTypography.metadata,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.sm),
         Row(
           children: [
             Expanded(
               child: DropdownButtonFormField<EvidenceType>(
-                value: _selectedType,
+                initialValue: _selectedType,
                 decoration: const InputDecoration(labelText: 'Evidence type', isDense: true),
                 items: EvidenceType.values
                     .map((t) => DropdownMenuItem(value: t, child: Text(t.label)))
@@ -123,45 +140,58 @@ class _EvidenceCaptureWidgetState extends State<EvidenceCaptureWidget> {
                 },
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.sm),
             IconButton.filled(
+              style: IconButton.styleFrom(backgroundColor: AppColors.teal, minimumSize: const Size(48, 48)),
               onPressed: (_uploading || _checkingQuality) ? null : _capture,
               icon: (_uploading || _checkingQuality)
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Icon(Icons.camera_alt),
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.camera_alt, color: Colors.white),
             ),
           ],
         ),
         if (_retakeReasons != null)
           Container(
-            margin: const EdgeInsets.only(top: 8),
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: Colors.amber.shade50, borderRadius: BorderRadius.circular(8)),
+            margin: const EdgeInsets.only(top: AppSpacing.sm),
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(color: AppColors.warningSoft, borderRadius: BorderRadius.circular(AppRadius.small)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Retake required', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.warning)),
+                const Text('Retake required', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.warning, fontSize: 13)),
+                const SizedBox(height: 2),
                 ..._retakeReasons!.map((r) => Text('• ${r.label}', style: const TextStyle(color: AppColors.warning, fontSize: 12))),
               ],
             ),
           ),
-        if (_error != null) Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 12)),
-        const SizedBox(height: 8),
+        if (_error != null) ...[
+          const SizedBox(height: AppSpacing.sm),
+          Text(_error!, style: const TextStyle(color: AppColors.fail, fontSize: 12.5, fontWeight: FontWeight.w500)),
+        ],
+        const SizedBox(height: AppSpacing.sm),
         FutureBuilder<List<EvidenceFile>>(
           future: _future,
           builder: (context, snapshot) {
             final files = snapshot.data ?? [];
             if (files.isEmpty) {
-              return const Text('No evidence captured yet.', style: TextStyle(color: Colors.grey));
+              return Text('No evidence captured yet.', style: AppTypography.metadata);
             }
             return Column(
               children: files
-                  .map((f) => ListTile(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        leading: const Icon(Icons.description_outlined, size: 18),
-                        title: Text(f.evidenceType.label),
-                        trailing: _trailingFor(context, f),
+                  .map((f) => Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.description_outlined, size: 18, color: AppColors.textSecondary),
+                            const SizedBox(width: AppSpacing.sm),
+                            Expanded(child: Text(f.evidenceType.label, style: AppTypography.body)),
+                            _trailingFor(context, f),
+                          ],
+                        ),
                       ))
                   .toList(),
             );
@@ -202,7 +232,7 @@ class _EvidenceCaptureWidgetState extends State<EvidenceCaptureWidget> {
     }
     return Text(
       '${f.capturedAt.hour.toString().padLeft(2, '0')}:${f.capturedAt.minute.toString().padLeft(2, '0')}',
-      style: const TextStyle(color: Colors.grey, fontSize: 12),
+      style: AppTypography.metadata,
     );
   }
 }

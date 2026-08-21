@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:stericord_mobile/core/components/components.dart';
+import 'package:stericord_mobile/core/theme/app_theme.dart';
 import 'package:stericord_mobile/features/auth/auth_controller.dart';
 import 'package:stericord_mobile/features/cycles/cycle_repository.dart';
 import 'package:stericord_mobile/features/equipment/equipment_model.dart';
@@ -67,7 +69,8 @@ class _CreateCycleSheetState extends State<CreateCycleSheet> {
       );
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
-      setState(() => _error = e.toString());
+      debugPrint('Create cycle error: $e');
+      setState(() => _error = 'Could not create the cycle. Check the details and try again.');
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -77,10 +80,10 @@ class _CreateCycleSheetState extends State<CreateCycleSheet> {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+        left: AppSpacing.xxl,
+        right: AppSpacing.xxl,
+        top: AppSpacing.xxl,
+        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.xxl,
       ),
       child: Form(
         key: _formKey,
@@ -88,39 +91,56 @@ class _CreateCycleSheetState extends State<CreateCycleSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('Create Sterilization Cycle', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 16),
-            _loadingEquipment
-                ? const Center(child: CircularProgressIndicator())
-                : DropdownButtonFormField<String>(
-                    value: _selectedEquipmentId,
-                    decoration: const InputDecoration(labelText: 'Equipment'),
-                    items: _equipment
-                        .map((e) => DropdownMenuItem(value: e.id, child: Text(e.equipmentCode)))
-                        .toList(),
-                    onChanged: (value) => setState(() => _selectedEquipmentId = value),
-                    validator: (v) => v == null ? 'Select equipment' : null,
-                  ),
-            const SizedBox(height: 12),
+            Text('New sterilization cycle', style: AppTypography.sectionHeader),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Select the equipment and give this cycle an identifier.',
+              style: AppTypography.body.copyWith(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            if (_loadingEquipment)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                child: SteriInlineProgress(label: 'Loading equipment…'),
+              )
+            else if (_equipment.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+                child: Text(
+                  'No active equipment available. An equipment must be ACTIVE to start a cycle on it.',
+                  style: TextStyle(color: AppColors.warning, fontSize: 13, fontWeight: FontWeight.w500),
+                ),
+              )
+            else
+              DropdownButtonFormField<String>(
+                initialValue: _selectedEquipmentId,
+                decoration: const InputDecoration(labelText: 'Equipment'),
+                items: _equipment
+                    .map((e) => DropdownMenuItem(value: e.id, child: Text(e.equipmentCode)))
+                    .toList(),
+                onChanged: (value) => setState(() => _selectedEquipmentId = value),
+                validator: (v) => v == null ? 'Select equipment' : null,
+              ),
+            const SizedBox(height: AppSpacing.md),
             TextFormField(
               controller: _cycleNumberController,
-              decoration: const InputDecoration(labelText: 'Cycle number'),
+              decoration: const InputDecoration(labelText: 'Cycle number', hintText: 'e.g. CYC-2026-0094'),
               validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             TextFormField(
               controller: _cycleTypeController,
-              decoration: const InputDecoration(labelText: 'Cycle type'),
+              decoration: const InputDecoration(labelText: 'Cycle type', hintText: 'e.g. Steam Prevac'),
               validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
             ),
             if (_error != null) ...[
-              const SizedBox(height: 12),
-              Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 13)),
+              const SizedBox(height: AppSpacing.md),
+              Text(_error!, style: const TextStyle(color: AppColors.fail, fontSize: 13, fontWeight: FontWeight.w500)),
             ],
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl),
             ElevatedButton(
               onPressed: _submitting ? null : _submit,
-              child: Text(_submitting ? 'Creating…' : 'Create Cycle'),
+              child: Text(_submitting ? 'Creating…' : 'Create cycle'),
             ),
           ],
         ),

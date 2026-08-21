@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:stericord_mobile/core/components/components.dart';
 import 'package:stericord_mobile/core/theme/app_theme.dart';
 import 'package:stericord_mobile/features/ai/ai_model.dart';
 import 'package:stericord_mobile/features/ai/ai_repository.dart';
@@ -63,7 +64,8 @@ class _VerifyCycleSheetState extends State<VerifyCycleSheet> {
       );
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
-      setState(() => _error = e.toString());
+      debugPrint('Verify cycle error: $e');
+      setState(() => _error = 'Could not record the verification. Try again.');
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -73,130 +75,76 @@ class _VerifyCycleSheetState extends State<VerifyCycleSheet> {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+        left: AppSpacing.xxl,
+        right: AppSpacing.xxl,
+        top: AppSpacing.xxl,
+        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.xxl,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Manual Verification', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+          Text('Manual verification', style: AppTypography.sectionHeader),
           if (_aiSuggestion?.suggestedResult != null) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: AppColors.scBlueLight, borderRadius: BorderRadius.circular(8)),
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(color: AppColors.infoSoft, borderRadius: BorderRadius.circular(AppRadius.small)),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.auto_awesome, size: 16, color: AppColors.scBlue),
-                  const SizedBox(width: 8),
+                  const Icon(Icons.auto_awesome, size: 16, color: AppColors.info),
+                  const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(
                       'AI suggests ${_aiSuggestion!.suggestedResult}'
                       '${_aiSuggestion!.confidenceBand != null ? ' (${_aiSuggestion!.confidenceBand} confidence)' : ''} '
                       'from the captured indicator evidence. Advisory only — confirm or override below.',
-                      style: const TextStyle(fontSize: 12),
+                      style: const TextStyle(fontSize: 12.5, color: AppColors.textPrimary),
                     ),
                   ),
                 ],
               ),
             ),
           ],
-          const SizedBox(height: 16),
-          _ResultOption(
+          const SizedBox(height: AppSpacing.lg),
+          SteriResultOption(
             title: 'PASS',
             description: 'All indicators and parameters are within spec. Packs may be released individually.',
-            color: AppColors.pass,
+            tone: SteriStatusTone.pass,
             selected: _result == VerificationResult.pass,
             onTap: () => setState(() => _result = VerificationResult.pass),
           ),
-          _ResultOption(
+          SteriResultOption(
             title: 'FAIL',
             description: 'Sterility cannot be confirmed. All packs in this cycle will be quarantined.',
-            color: AppColors.fail,
+            tone: SteriStatusTone.fail,
             selected: _result == VerificationResult.fail,
             onTap: () => setState(() => _result = VerificationResult.fail),
           ),
-          _ResultOption(
+          SteriResultOption(
             title: 'UNDETERMINED',
             description: 'Inconclusive — stays pending verification for further review.',
-            color: AppColors.warning,
+            tone: SteriStatusTone.warning,
             selected: _result == VerificationResult.undetermined,
             onTap: () => setState(() => _result = VerificationResult.undetermined),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.sm),
           TextField(
             controller: _notesController,
             maxLines: 3,
             decoration: const InputDecoration(labelText: 'Notes', alignLabelWithHint: true),
           ),
           if (_error != null) ...[
-            const SizedBox(height: 12),
-            Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 13)),
+            const SizedBox(height: AppSpacing.md),
+            Text(_error!, style: const TextStyle(color: AppColors.fail, fontSize: 13, fontWeight: FontWeight.w500)),
           ],
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.xl),
           ElevatedButton(
             onPressed: (_result == null || _submitting) ? null : _submit,
-            child: Text(_submitting ? 'Recording…' : 'Record Verification'),
+            child: Text(_submitting ? 'Recording…' : 'Record verification'),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ResultOption extends StatelessWidget {
-  final String title;
-  final String description;
-  final Color color;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _ResultOption({
-    required this.title,
-    required this.description,
-    required this.color,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    // A manual selection indicator, not the Radio widget: this is a single
-    // free-standing choice (no RadioGroup ancestor / groupValue involved),
-    // and Radio's groupValue-based API is being superseded by RadioGroup.
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          border: Border.all(color: selected ? color : Colors.grey.shade300),
-          borderRadius: BorderRadius.circular(8),
-          color: selected ? color.withValues(alpha: 0.08) : null,
-        ),
-        child: Row(
-          children: [
-            Icon(
-              selected ? Icons.check_circle : Icons.circle_outlined,
-              color: selected ? color : Colors.grey.shade400,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-                  Text(description, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

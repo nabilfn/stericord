@@ -18,6 +18,17 @@ class CycleRepository {
     return SterilizationCycle.fromJson(data);
   }
 
+  Future<List<SterilizationCycle>> listCyclesByEquipment(String equipmentId) async {
+    final data = await SupabaseClientProvider.client
+        .from('sterilization_cycles')
+        .select()
+        .eq('equipment_id', equipmentId)
+        .order('created_at', ascending: false);
+    return (data as List)
+        .map((row) => SterilizationCycle.fromJson(row as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<SterilizationCycle> createCycle({
     required String organizationId,
     required String equipmentId,

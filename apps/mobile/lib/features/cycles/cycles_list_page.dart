@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:stericord_mobile/core/components/components.dart';
+import 'package:stericord_mobile/core/theme/app_theme.dart';
 import 'package:stericord_mobile/features/cycles/cycle_model.dart';
 import 'package:stericord_mobile/features/cycles/cycle_repository.dart';
 import 'package:stericord_mobile/features/cycles/cycle_status_chip.dart';
@@ -47,38 +49,55 @@ class _CyclesListPageState extends State<CyclesListPage> {
       ),
       body: RefreshIndicator(
         onRefresh: _refresh,
+        color: AppColors.teal,
         child: FutureBuilder<List<SterilizationCycle>>(
           future: _future,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+              return const SteriLoadingState();
             }
             if (snapshot.hasError) {
-              return ListView(
-                children: [Padding(padding: const EdgeInsets.all(24), child: Text('Failed to load cycles: ${snapshot.error}'))],
-              );
+              return SteriErrorState(title: 'Unable to load cycles', onRetry: _refresh);
             }
             final cycles = snapshot.data ?? [];
             if (cycles.isEmpty) {
-              return ListView(
-                children: const [Padding(padding: EdgeInsets.all(24), child: Text('No cycles yet.'))],
+              return SteriEmptyState(
+                icon: Icons.layers_outlined,
+                title: 'No cycles yet',
+                message: 'Start the first sterilization cycle for your equipment.',
+                actionLabel: 'New cycle',
+                onAction: _createCycle,
               );
             }
             return ListView.separated(
+              padding: const EdgeInsets.all(AppSpacing.screenPadding),
               itemCount: cycles.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
+              separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
               itemBuilder: (context, index) {
                 final cycle = cycles[index];
-                return ListTile(
-                  title: Text(cycle.cycleNumber, style: const TextStyle(fontWeight: FontWeight.w600)),
-                  subtitle: Text(cycle.cycleType),
-                  trailing: CycleStatusChip(status: cycle.cycleStatus),
+                return SteriCard(
                   onTap: () async {
                     await Navigator.of(context).push(
                       MaterialPageRoute(builder: (_) => CycleDetailPage(cycleId: cycle.id)),
                     );
                     if (mounted) await _refresh();
                   },
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Cycle ${cycle.cycleNumber}', style: AppTypography.cardTitle),
+                            const SizedBox(height: 4),
+                            Text(cycle.cycleType, style: AppTypography.metadata),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      CycleStatusChip(status: cycle.cycleStatus),
+                    ],
+                  ),
                 );
               },
             );
