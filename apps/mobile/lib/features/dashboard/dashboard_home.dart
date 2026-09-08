@@ -82,6 +82,11 @@ class _DashboardHomeState extends State<DashboardHome> {
       appBar: AppBar(
         title: const Text('SteriCord'),
         actions: [
+          if (auth.isOffline)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+              child: SteriStatusBadge(label: 'OFFLINE', tone: SteriStatusTone.warning, icon: Icons.cloud_off_rounded, compact: true),
+            ),
           const SyncStatusBadge(),
           IconButton(
             icon: const Icon(Icons.notifications_outlined),

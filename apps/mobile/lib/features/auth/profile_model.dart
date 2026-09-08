@@ -25,4 +25,15 @@ class Profile {
       isActive: json['is_active'] as bool,
     );
   }
+
+  /// Used only for the offline profile cache (see AuthRepository) -- not a
+  /// server payload shape, just a local round-trip of the same fields.
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'organization_id': organizationId,
+        'department_id': departmentId,
+        'full_name': fullName,
+        'email': email,
+        'is_active': isActive,
+      };
 }

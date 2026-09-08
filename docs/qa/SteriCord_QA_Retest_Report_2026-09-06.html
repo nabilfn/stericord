@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SteriCord Targeted Remediation QA Retest Report</title>
+<style>
+  @page {
+    size: A4;
+    margin: 18mm 17mm 18mm 17mm;
+    @bottom-left { content: "Controlled QA retest report | Version 2.1 | 8 September 2026"; color: #65747b; font: 7.5pt Arial, sans-serif; }
+    @bottom-right { content: "Page " counter(page) " of " counter(pages); color: #65747b; font: 7.5pt Arial, sans-serif; }
+  }
+  :root { --navy:#173f4b; --teal:#0b7b7a; --pale:#e8f3f2; --line:#b7c7cb; --ink:#1c282d; --muted:#5d6c72; --pass:#237a4b; --fail:#a53a3a; --blocked:#a46b14; }
+  * { box-sizing: border-box; }
+  body { margin:0; color:var(--ink); font-family:Arial, Helvetica, sans-serif; font-size:9.4pt; line-height:1.34; }
+  .page { break-after:page; min-height:250mm; position:relative; }
+  .page:last-child { break-after:auto; }
+  .running { color:var(--teal); font-size:7.8pt; font-weight:700; letter-spacing:.08em; border-bottom:.7pt solid var(--line); padding-bottom:3mm; margin-bottom:7mm; }
+  h1 { margin:0; color:var(--navy); font-size:24pt; line-height:1.1; }
+  h2 { color:var(--navy); font-size:15pt; margin:0 0 4mm; padding-bottom:1.5mm; border-bottom:1.2pt solid var(--teal); }
+  h3 { color:var(--teal); font-size:11pt; margin:5mm 0 2mm; }
+  p { margin:0 0 3mm; }
+  ul,ol { margin:2mm 0 3mm 5mm; padding-left:4mm; }
+  li { margin-bottom:1.2mm; }
+  .cover { padding-top:27mm; }
+  .kicker { color:var(--teal); font-size:10pt; font-weight:700; letter-spacing:.12em; margin-bottom:8mm; }
+  .subtitle { color:#496168; font-size:12pt; margin:5mm 0 18mm; max-width:150mm; }
+  .cover-rule { width:38mm; border-top:3pt solid var(--teal); margin:12mm 0; }
+  .metadata { display:grid; grid-template-columns:42mm 1fr; gap:2.2mm 5mm; margin-top:18mm; font-size:9.2pt; }
+  .metadata .label { color:var(--muted); font-weight:700; }
+  .decision { display:inline-block; padding:3mm 5mm; color:white; background:var(--fail); font-size:13pt; font-weight:700; letter-spacing:.04em; }
+  .note { background:var(--pale); border-left:3pt solid var(--teal); padding:4mm 5mm; margin:4mm 0; }
+  .warning { background:#fff6e5; border-left-color:var(--blocked); }
+  .danger { background:#fbeaea; border-left-color:var(--fail); }
+  .metric-row { display:flex; gap:4mm; margin:6mm 0; }
+  .metric { flex:1; border:1pt solid var(--line); border-top:3pt solid var(--teal); padding:4mm; }
+  .metric .num { font-size:19pt; font-weight:700; color:var(--navy); }
+  .metric .lab { color:var(--muted); font-size:8pt; text-transform:uppercase; letter-spacing:.05em; }
+  table { border-collapse:collapse; width:100%; margin:3mm 0 5mm; table-layout:fixed; }
+  th { background:var(--navy); color:white; text-align:left; font-size:8pt; padding:2.5mm; vertical-align:middle; }
+  td { border:.6pt solid var(--line); padding:2.4mm; vertical-align:top; overflow-wrap:anywhere; }
+  tr:nth-child(even) td { background:#f5f8f8; }
+  .status { font-weight:700; }
+  .pass { color:var(--pass); } .fail { color:var(--fail); } .blocked { color:var(--blocked); }
+  .small { color:var(--muted); font-size:8pt; }
+  .mono { font-family:"Courier New", monospace; font-size:7.7pt; background:#f3f5f5; padding:2mm 3mm; border:1pt solid #dbe2e3; overflow-wrap:anywhere; }
+  .evidence { border-left:2pt solid var(--teal); padding-left:4mm; margin-bottom:4mm; }
+  .tight td { padding:1.9mm 2.2mm; }
+  .signoff td { height:8mm; padding-top:1.6mm; padding-bottom:1.6mm; }
+  .final-page { font-size:8.2pt; line-height:1.22; }
+  .final-page table { margin-top:2mm; margin-bottom:3mm; }
+  .final-page td { padding:1.6mm 2mm; }
+  .final-page h2 { margin-bottom:3mm; }
+  .final-page h3 { margin-top:3mm; margin-bottom:1mm; }
+  .final-page .signoff td { height:6mm; padding-top:1mm; padding-bottom:1mm; }
+</style>
+</head>
+<body>
+
+<section class="page cover">
+  <div class="kicker">STERICORD | QUALITY ASSURANCE</div>
+  <h1>STERICORD</h1>
+  <div class="cover-rule"></div>
+  <div style="font-size:22pt;color:#173f4b;font-weight:700;line-height:1.12">Targeted Remediation<br>QA Retest Report</div>
+  <div class="subtitle">Verification of defects D-01 through D-07 covering audit controls, quarantine atomicity, incident lifecycle logging, offline mobile behavior, reporting authorization and account deactivation.</div>
+  <div class="decision">NO-GO</div>
+  <div class="metadata">
+    <div class="label">Report version</div><div>2.1</div>
+    <div class="label">Execution date</div><div>8 September 2026</div>
+    <div class="label">Tester</div><div>Codex automated/local retest</div>
+    <div class="label">Environment</div><div>Local macOS / Supabase / Postgres / Docker / Flutter SDK</div>
+    <div class="label">Source report</div><div>SteriCord Full-Flow QA Test Report, Version 1.0</div>
+    <div class="label">Retest scope</div><div>Previously flagged defects and directly affected regression controls</div>
+  </div>
+  <div class="note warning" style="margin-top:20mm"><b>Scope note.</b> This was a targeted remediation retest, not a fresh execution of all 22 original full-flow cases. Physical-device, real Document AI, real Gemini and other unavailable checks are not represented as passed.</div>
+</section>
+
+<section class="page">
+  <div class="running">STERICORD | QUALITY ASSURANCE</div>
+  <h2>1. Executive Summary</h2>
+  <p>The targeted retest executed the new database, authorization, reporting and build validations against the updated local codebase. Audit coverage, quarantine consistency, incident lifecycle events, report role restrictions and malformed bearer handling now pass their automated acceptance checks. The core FF-20 data-access defect is also corrected: a JWT issued before deactivation returns no protected equipment rows immediately after the profile is disabled.</p>
+  <div class="metric-row">
+    <div class="metric"><div class="num">6</div><div class="lab">Remediations passed</div></div>
+    <div class="metric"><div class="num">0</div><div class="lab">Failed</div></div>
+    <div class="metric"><div class="num">1</div><div class="lab">Blocked</div></div>
+    <div class="metric"><div class="num">40</div><div class="lab">Script checks passed</div></div>
+  </div>
+  <h3>Release-critical conclusions</h3>
+  <ul>
+    <li><b>D-01, D-02 and D-03 passed:</b> equipment auditing, quarantine record atomicity and incident lifecycle event naming behaved as required.</li>
+    <li><b>D-05 and D-06 passed:</b> unauthorized report roles are denied before data access/export logging, and malformed credentials return 401 rather than 500.</li>
+    <li><b>D-07 and follow-up D-08 passed:</b> existing-token protected reads are blocked; deactivated password login and refresh return controlled 403 responses with no token and no raw database error.</li>
+    <li><b>D-04 remains blocked:</b> the mobile implementation compiles and contains the expected encrypted queue/idempotency mechanisms, but the required connectivity-loss and recovery scenario was not executed on a physical iPhone or Android device.</li>
+    <li><b>FF-22 remains incomplete:</b> Android, low-storage, printed-QR, reproducible glare and mobile MFA/TOTP coverage remain outstanding.</li>
+  </ul>
+  <div class="note danger"><b>Release recommendation: NO-GO.</b> Do not change the pilot-release gate until D-04/FF-16 passes on physical devices and the remaining P0/P1 validation gaps receive execution or formal risk acceptance.</div>
+  <h3>Automated execution totals</h3>
+  <table class="tight">
+    <tr><th style="width:37%">Suite</th><th style="width:17%">Result</th><th>Evidence</th></tr>
+    <tr><td>Database/security remediation suite</td><td class="status pass">25 PASS / 0 FAIL</td><td>Tenant isolation, audit immutability, D-01, D-02, D-03, D-07 and controlled deactivated login/refresh.</td></tr>
+    <tr><td>Reporting authorization suite</td><td class="status pass">15 PASS / 0 FAIL</td><td>D-05/D-06 roles, all report routes, export auditing, valid PDF, malformed tokens and cross-tenant 404.</td></tr>
+    <tr><td>Web quality gates</td><td class="status pass">PASS</td><td>ESLint, TypeScript no-emit check and Vite production build.</td></tr>
+    <tr><td>Flutter tests</td><td class="status pass">2 PASS</td><td>Existing model round-trip tests only; no automated offline workflow coverage.</td></tr>
+    <tr><td>Flutter analysis</td><td class="status fail">1 INFO</td><td>Deprecated <span class="mono">anonKey</span> use in lib/main.dart; no compile error reported.</td></tr>
+  </table>
+</section>
+
+<section class="page">
+  <div class="running">STERICORD | QUALITY ASSURANCE</div>
+  <h2>2. Test Environment and Method</h2>
+  <table>
+    <tr><th style="width:31%">Component</th><th>Execution value</th></tr>
+    <tr><td>Repository</td><td>/Users/nabilfn/SteriCord working tree containing the remediation changes</td></tr>
+    <tr><td>Supabase API/Auth</td><td>http://127.0.0.1:54421</td></tr>
+    <tr><td>Postgres</td><td>127.0.0.1:54422 / database postgres</td></tr>
+    <tr><td>Reporting service</td><td>Fresh Docker build, http://localhost:8000</td></tr>
+    <tr><td>Flutter</td><td>Installed local SDK; static analysis and unit tests executed</td></tr>
+    <tr><td>Physical mobile devices</td><td>Unavailable during this retest</td></tr>
+    <tr><td>OCR / Gemini</td><td>Real external-service credentials not exercised</td></tr>
+  </table>
+  <h3>Method</h3>
+  <p>Each defect was assessed using executable regression checks where available, then cross-checked against the implementation and fresh database/API evidence. Negative authorization checks were considered successful only when the action was denied and downstream audit state remained clean. A source-code implementation was not treated as proof of physical-device behavior.</p>
+  <h3>Applied remediation migrations</h3>
+  <p>The local migration ledger confirms all seven 6 September migrations were applied, from <span class="mono">20260906000001_enforce_active_profile</span> through <span class="mono">20260906000007_report_export_authorization</span>.</p>
+  <h3>Outcome definitions</h3>
+  <table class="tight">
+    <tr><th style="width:22%">Outcome</th><th>Meaning in this report</th></tr>
+    <tr><td class="status pass">PASS</td><td>The remediated behavior was directly exercised and met the targeted acceptance criteria.</td></tr>
+    <tr><td class="status fail">FAIL</td><td>At least one required behavior produced an incorrect or incomplete result.</td></tr>
+    <tr><td class="status blocked">BLOCKED</td><td>The required execution environment or device was unavailable; code inspection alone is insufficient.</td></tr>
+  </table>
+  <div class="note"><b>Safety statement.</b> AI remains advisory. This retest did not change or re-evaluate the requirement that only authorized humans make authoritative PASS/FAIL decisions and release packs.</div>
+</section>
+
+<section class="page">
+  <div class="running">STERICORD | QUALITY ASSURANCE</div>
+  <h2>3. Targeted Retest Results</h2>
+  <table>
+    <tr><th style="width:10%">ID</th><th style="width:13%">Result</th><th style="width:31%">Execution conclusion</th><th>Primary evidence</th></tr>
+    <tr><td>D-01<br><span class="small">FF-04</span></td><td class="status pass">PASS</td><td>Create, status change and metadata edit emitted the required distinct audit events.</td><td>Entity 200cb7ea-9153-4b47-b963-2b9f35f62bbc; EQUIPMENT_CREATED, EQUIPMENT_STATUS_CHANGED, EQUIPMENT_UPDATED.</td></tr>
+    <tr><td>D-02<br><span class="small">FF-06</span></td><td class="status pass">PASS</td><td>quarantine_pack() created one quarantine row; repetition was rejected without duplication.</td><td>Pack 62f73ed5-5ed3-463b-be99-7baeea96d709; PACK_QUARANTINED and QUARANTINE_STARTED.</td></tr>
+    <tr><td>D-03<br><span class="small">FF-14</span></td><td class="status pass">PASS</td><td>Full tested lifecycle emitted exactly four correctly named events; invalid transitions were rejected.</td><td>Incident b70f0579-f4ae-4574-b7a2-4112e9ca6b9e.</td></tr>
+    <tr><td>D-04<br><span class="small">FF-16</span></td><td class="status blocked">BLOCKED</td><td>Implementation evidence exists, but physical connectivity-loss, restart and interrupted-sync behavior was not executed.</td><td>Flutter tests 2/2 pass; no offline-flow tests; no physical iPhone/Android evidence.</td></tr>
+    <tr><td>D-05<br><span class="small">FF-19</span></td><td class="status pass">PASS</td><td>OT_NURSE and CSSD_TECHNICIAN exports were denied; authorized roles produced PDFs; cross-tenant policy remained safe.</td><td>15/15 reporting checks; no blocked-attempt REPORT_EXPORTED rows.</td></tr>
+    <tr><td>D-06<br><span class="small">FF-19</span></td><td class="status pass">PASS</td><td>Empty, whitespace, missing and malformed credentials returned HTTP 401.</td><td>No tested malformed credential returned HTTP 500.</td></tr>
+    <tr><td>D-07<br><span class="small">FF-20</span></td><td class="status pass">PASS</td><td>Existing-token access was blocked; deactivated login and refresh returned controlled 403 responses without issuing a token.</td><td>Existing JWT protected read: empty result; login: 403; refresh: 403; reactivation login: 200.</td></tr>
+  </table>
+  <h3>Regression integrity</h3>
+  <p>Hospital B could not read Hospital A equipment/audit data or verify Hospital A's audit chain. Client audit deletion remained blocked. The final audit-chain verification returned zero issues. The latest observed event was <span class="mono">77a48bb7-4160-46bc-89f9-d0e183b90431</span>, hash <span class="mono">f71a2077874aa847ff5c31f44149ebc1621a32a6e11ba8113af7f00ceea0f411</span>.</p>
+</section>
+
+<section class="page">
+  <div class="running">STERICORD | QUALITY ASSURANCE</div>
+  <h2>4. Detailed Evidence and Observations</h2>
+  <div class="evidence"><h3>4.1 D-01 — Equipment audit coverage</h3><p>A synthetic equipment record was created, moved to MAINTENANCE and edited. Audit inspection returned exactly EQUIPMENT_CREATED, EQUIPMENT_STATUS_CHANGED and EQUIPMENT_UPDATED in order. The equipment trigger performs server-side logging, and audit-chain verification remained intact.</p></div>
+  <div class="evidence"><h3>4.2 D-02 — Quarantine atomicity</h3><p>A synthetic pack was moved to PENDING_VERIFICATION and quarantined as a supervisor. Exactly one public.quarantines row was created. A second quarantine attempt was rejected and the row count remained one. Both PACK_QUARANTINED and QUARANTINE_STARTED events referenced the same pack.</p></div>
+  <div class="evidence"><h3>4.3 D-03 — Incident lifecycle auditing</h3><p>The incident advanced ALERTED → ACKNOWLEDGED → REPLACEMENT_DISPATCHED → RESOLVED → CLOSED. The resulting sequence was INCIDENT_ACKNOWLEDGED, INCIDENT_REPLACEMENT_DISPATCHED, INCIDENT_RESOLVED and INCIDENT_CLOSED. Empty resolution notes, nurse acknowledgement and terminal regression were rejected.</p></div>
+  <div class="evidence"><h3>4.4 D-04 — Offline OT queue</h3><p>Static inspection found encrypted payload storage, a secure-storage encryption key, persistent queue states, stable client operation IDs, server-side idempotency, recovery of SYNCING records and capped exponential delay. Authentication changes also preserve a cached authenticated profile during transport failures.</p><p class="status blocked">This does not prove physical-device acceptance. The original scenario must still be repeated with radios disabled while an eligible pack is open.</p></div>
+  <div class="evidence"><h3>4.5 D-05/D-06 — Reporting</h3><p>The freshly rebuilt reporting service denied OT_NURSE and CSSD_TECHNICIAN report exports with 403, allowed HOSPITAL_ADMIN and CSSD_SUPERVISOR equipment exports, produced a valid PDF, denied Hospital B access to Hospital A equipment with 404, and created no success export row for blocked nurse attempts. Empty, whitespace-only, missing and garbage bearer credentials all returned 401.</p></div>
+  <div class="evidence"><h3>4.6 D-07/D-08 — Deactivation</h3><p>An active user's session succeeded before deactivation. After profiles.is_active was set false, role-gated access returned no protected equipment. Password login and refresh using a pre-existing refresh token both returned HTTP 403, issued no token, used the stable “Account is deactivated” message and did not expose SQLSTATE P0001. Wrong-password behavior remained 400, another active user remained unaffected, and the reactivated user immediately returned to HTTP 200 login.</p></div>
+</section>
+
+<section class="page">
+  <div class="running">STERICORD | QUALITY ASSURANCE</div>
+  <h2>5. Build and Static Validation</h2>
+  <table>
+    <tr><th style="width:30%">Check</th><th style="width:15%">Result</th><th>Observation</th></tr>
+    <tr><td>Web ESLint</td><td class="status pass">PASS</td><td>No lint errors.</td></tr>
+    <tr><td>Web TypeScript</td><td class="status pass">PASS</td><td><span class="mono">tsc -b --noEmit</span> completed successfully.</td></tr>
+    <tr><td>Web production build</td><td class="status pass">PASS</td><td>1,733 modules transformed; build completed. Vite reported a non-blocking bundle-size warning for a 571.38 kB JavaScript chunk.</td></tr>
+    <tr><td>Flutter unit tests</td><td class="status pass">PASS</td><td>2/2 existing tests passed: UserRole and EquipmentStatus database-value round trips.</td></tr>
+    <tr><td>Flutter analyzer</td><td class="status fail">ATTENTION</td><td>One informational deprecation: anonKey in lib/main.dart should migrate to publishableKey. No offline-specific analyzer error was reported.</td></tr>
+    <tr><td>Reporting Python compile</td><td class="status pass">PASS</td><td>Application sources compiled successfully using an isolated bytecode cache.</td></tr>
+    <tr><td>Reporting Python unit tests</td><td class="status blocked">NOT AVAILABLE</td><td>No pytest dependency/test suite was available in the service environment. API behavior was validated through the Dockerized integration script.</td></tr>
+  </table>
+  <h3>Important coverage limitation</h3>
+  <div class="note warning">The mobile test suite has no automated coverage for queue encryption, process restart, killed-app SYNCING recovery, retry classification, duplicate suppression or UI state transitions. These behaviors were supported by source inspection only and remain subject to physical-device execution.</div>
+  <h3>Commands executed</h3>
+  <div class="mono">./infrastructure/deployment/security-checks.sh<br>./infrastructure/deployment/report-authorization-checks.sh<br>npm run lint &amp;&amp; npm run typecheck &amp;&amp; npm run build<br>flutter analyze<br>flutter test<br>python3 -m compileall -q app</div>
+</section>
+
+<section class="page">
+  <div class="running">STERICORD | QUALITY ASSURANCE</div>
+  <h2>6. Defect Register and Validation Gaps</h2>
+  <table>
+    <tr><th style="width:11%">ID</th><th style="width:15%">Severity</th><th style="width:28%">Title</th><th>Evidence / required action</th></tr>
+    <tr><td>G-01</td><td>P0 validation</td><td>Physical offline POU retest absent</td><td>Repeat FF-16 steps 64–67 on physical iPhone and Android, including queue-at-rest inspection, restart, interrupted SYNCING, retry and duplicate checks.</td></tr>
+    <tr><td>G-02</td><td>P0 validation</td><td>Mobile acceptance incomplete</td><td>Android, low-storage, printed QR, reproducible glare and mobile MFA/TOTP remain unexecuted or unimplemented.</td></tr>
+    <tr><td>G-03</td><td>P1 validation</td><td>Real OCR path unavailable</td><td>Configure controlled Google Document AI credentials and execute real OCR prefill/confidence cases.</td></tr>
+    <tr><td>G-04</td><td>P1 validation</td><td>Real Gemini path unavailable</td><td>Configure Gemini and execute representative PASS, FAIL and ambiguous advisory cases.</td></tr>
+    <tr><td>G-05</td><td>Cross-cutting</td><td>Formal readiness evidence absent</td><td>Run production monitoring/alert drill and capture CSSD, OT, security/privacy and product-owner approval.</td></tr>
+  </table>
+  <h3>Retest plan</h3>
+  <ol>
+    <li>Add automated mobile tests for encrypted persistence, restart recovery, retry/conflict classification and idempotent replay.</li>
+    <li>Repeat the complete FF-16 physical-device sequence on iPhone and Android.</li>
+    <li>Complete the remaining FF-22 device and MFA coverage.</li>
+    <li>Execute or formally disposition the real-service OCR/Gemini cases.</li>
+  </ol>
+</section>
+
+<section class="page final-page">
+  <div class="running">STERICORD | QUALITY ASSURANCE</div>
+  <h2>7. Release Gate Assessment</h2>
+  <table>
+    <tr><th style="width:31%">Gate</th><th style="width:17%">Decision</th><th>Evidence / rationale</th></tr>
+    <tr><td>Audit remediation</td><td class="status pass">PASS</td><td>D-01 and D-03 passed; audit-chain verification returned zero issues.</td></tr>
+    <tr><td>Quarantine consistency</td><td class="status pass">PASS</td><td>D-02 passed for creation and repeat rejection.</td></tr>
+    <tr><td>Report security</td><td class="status pass">PASS</td><td>D-05/D-06 passed 15 integration checks.</td></tr>
+    <tr><td>User deactivation</td><td class="status pass">PASS</td><td>Existing-token access, password login and refresh are blocked; controlled 403 response verified.</td></tr>
+    <tr><td>Mobile offline acceptance</td><td class="status blocked">NO</td><td>Required physical-device execution remains outstanding.</td></tr>
+    <tr><td>Mobile/device acceptance</td><td class="status blocked">NO</td><td>FF-22 gaps remain, including Android and mobile MFA.</td></tr>
+    <tr><td>External AI/OCR validation</td><td class="status blocked">PENDING</td><td>Real controlled credentials were not available for this retest.</td></tr>
+    <tr><td>Clinical/security/product sign-off</td><td class="status blocked">PENDING</td><td>No formal approval evidence was captured.</td></tr>
+    <tr><td><b>Final release decision</b></td><td class="status fail"><b>NO-GO</b></td><td>Do not proceed to pilot until the physical offline/device gates pass and remaining auth/validation findings are resolved or formally accepted.</td></tr>
+  </table>
+  <h2 style="margin-top:10mm">8. Final Recommendation</h2>
+  <div class="decision">NO-GO FOR PILOT RELEASE</div>
+  <p style="margin-top:5mm">The executable remediation scope now passes, including controlled deactivated-user login and refresh handling. The release decision nevertheless remains NO-GO because the offline OT scenario—the original physical iPhone release blocker—has not been rerun on devices and FF-22 acceptance remains incomplete.</p>
+  <h3>Approval Sign-off</h3>
+  <table class="signoff">
+    <tr><th style="width:33%">Role</th><th style="width:30%">Name</th><th>Signature / date</th></tr>
+    <tr><td>QA lead</td><td></td><td></td></tr>
+    <tr><td>CSSD clinical lead</td><td></td><td></td></tr>
+    <tr><td>OT clinical lead</td><td></td><td></td></tr>
+    <tr><td>Security / privacy</td><td></td><td></td></tr>
+    <tr><td>Product owner</td><td></td><td></td></tr>
+  </table>
+</section>
+
+</body>
+</html>

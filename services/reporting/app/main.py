@@ -39,7 +39,18 @@ templates = Environment(loader=FileSystemLoader(Path(__file__).parent / "templat
 def get_token(authorization: str | None = Header(default=None)) -> str:
     if not authorization or not authorization.lower().startswith("bearer "):
         raise HTTPException(status_code=401, detail="Missing bearer token")
-    return authorization.split(" ", 1)[1]
+    token = authorization.split(" ", 1)[1].strip()
+    # D-06: "Bearer " with nothing (or only whitespace) after it passes the
+    # prefix check above but leaves an empty token, which used to be
+    # forwarded as-is -- an empty/whitespace Authorization value reaching
+    # httpx as the literal header value produced an unhandled error deep in
+    # the request path (an internal 500), not a clean auth rejection.
+    # Reject it here, at the one place every endpoint already extracts the
+    # token, instead of relying on whatever downstream client happens to
+    # choke on it.
+    if not token:
+        raise HTTPException(status_code=401, detail="Missing bearer token")
+    return token
 
 
 # Rate limiting: report generation renders full PDFs via WeasyPrint, which is CPU-heavy,
@@ -74,6 +85,27 @@ def enforce_rate_limit(token: str) -> None:
     if len(log) >= RATE_LIMIT_MAX_REQUESTS:
         raise HTTPException(status_code=429, detail="Too many report requests, slow down")
     log.append(now)
+
+
+async def enforce_report_export_authorization(client: SupabaseClient) -> None:
+    """D-05: report export is a narrower permission than "can see this data
+    in the app" -- RLS SELECT policies are deliberately org-wide (any role
+    can see their own hospital's equipment/cycles/incidents in the UI), so
+    they were never going to be the thing that stops an OT_NURSE token from
+    exporting a formal compliance PDF. The role check itself still lives in
+    Postgres (can_export_compliance_reports(), which is just
+    user_has_role()/is_system_admin() under the current caller's own
+    session) -- this service still never re-implements authorization
+    itself, it only asks the database one more question before doing
+    anything with the answer to the questions it already asks.
+
+    Called before any entity-specific fetch, so an unauthorized caller
+    gets a 403 without this service ever touching (or leaking the
+    existence of) the requested report's underlying data.
+    """
+    allowed = await client.rpc("can_export_compliance_reports", {})
+    if allowed is not True:
+        raise HTTPException(status_code=403, detail="Not authorized to export compliance reports")
 
 
 def render_pdf(template_name: str, **context) -> bytes:
@@ -117,6 +149,7 @@ async def equipment_report(equipment_id: str, authorization: str | None = Header
     token = get_token(authorization)
     enforce_rate_limit(token)
     client = SupabaseClient(token)
+    await enforce_report_export_authorization(client)
     user = await client.whoami()
 
     equipment = await client.select_one("equipment", {"id": f"eq.{equipment_id}"})
@@ -146,6 +179,7 @@ async def cycle_report(cycle_id: str, authorization: str | None = Header(default
     token = get_token(authorization)
     enforce_rate_limit(token)
     client = SupabaseClient(token)
+    await enforce_report_export_authorization(client)
     user = await client.whoami()
 
     cycle = await client.select_one("sterilization_cycles", {"id": f"eq.{cycle_id}"})
@@ -192,6 +226,7 @@ async def incident_report(incident_id: str, authorization: str | None = Header(d
     token = get_token(authorization)
     enforce_rate_limit(token)
     client = SupabaseClient(token)
+    await enforce_report_export_authorization(client)
     user = await client.whoami()
 
     incident = await client.select_one("incidents", {"id": f"eq.{incident_id}"})
@@ -215,6 +250,7 @@ async def evidence_sheet(evidence_file_id: str, authorization: str | None = Head
     token = get_token(authorization)
     enforce_rate_limit(token)
     client = SupabaseClient(token)
+    await enforce_report_export_authorization(client)
     user = await client.whoami()
 
     evidence = await client.select_one("evidence_files", {"id": f"eq.{evidence_file_id}"})
